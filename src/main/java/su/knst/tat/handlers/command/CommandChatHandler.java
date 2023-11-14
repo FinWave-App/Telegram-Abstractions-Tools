@@ -18,7 +18,7 @@ public abstract class CommandChatHandler extends ChatHandler {
     public CommandChatHandler(BotCore core, long chatId) {
         super(core, chatId);
 
-        this.commandsListenerRemover = eventHandler.registerListener(NewMessageEvent.class, this::messageListener);
+        this.commandsListenerRemover = eventHandler.setValidator(NewMessageEvent.class, this::commandListener);
     }
 
     public void registerCommand(AbstractCommand command) {
@@ -64,15 +64,17 @@ public abstract class CommandChatHandler extends ChatHandler {
         commands.get(command).run(args, event);
     }
 
-    protected void messageListener(NewMessageEvent event) {
+    protected boolean commandListener(NewMessageEvent event) {
         String text = event.data.text();
 
         if (!text.startsWith("/"))
-            return;
+            return true;
 
         String[] commandAndArgs = text.substring(1).split(" ");
         String[] args = Arrays.copyOfRange(commandAndArgs, 1, commandAndArgs.length);
 
         runCommand(commandAndArgs[0], event, args);
+
+        return false;
     }
 }
