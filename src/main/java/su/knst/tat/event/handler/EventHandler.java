@@ -3,15 +3,15 @@ package su.knst.tat.event.handler;
 import su.knst.tat.event.Event;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 
 public class EventHandler<T extends Event<?>> {
     protected HashMap<Class<T>, ArrayList<EventListener<T>>> eventsListeners = new HashMap<>();
+    protected HashMap<Class<T>, EventValidator<T>> eventsValidators = new HashMap<>();
+
     protected EventHandler<T> handlerChild;
 
-    public <X extends T> EventListenerRemover registerListener(Class<X> type, EventListener<X> listener) {
+    public <X extends T> HandlerRemover registerListener(Class<X> type, EventListener<X> listener) {
         if (!eventsListeners.containsKey(type))
             eventsListeners.put((Class<T>) type, new ArrayList<>());
 
@@ -20,7 +20,16 @@ public class EventHandler<T extends Event<?>> {
         return () -> eventsListeners.get(type).remove(listener);
     }
 
+    public <X extends T> HandlerRemover setValidator(Class<X> type, EventValidator<X> validator) {
+        eventsValidators.put((Class<T>)type, (EventValidator<T>) validator);
+
+        return () -> eventsValidators.remove(type);
+    }
+
     public void fire(T event) {
+        if (eventsValidators.containsKey(event.getClass()) && !eventsValidators.get(event.getClass()).validate(event))
+            return;
+
         if (handlerChild != null) {
             handlerChild.fire(event);
 

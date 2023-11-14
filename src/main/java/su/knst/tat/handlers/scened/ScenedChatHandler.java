@@ -15,7 +15,7 @@ public abstract class ScenedChatHandler extends CommandChatHandler {
         super(core, chatId);
     }
 
-    public boolean switchScene(String name) {
+    public boolean switchScene(String name, Object arg) {
         if (!scenes.containsKey(name))
             return false;
 
@@ -23,8 +23,16 @@ public abstract class ScenedChatHandler extends CommandChatHandler {
             activeScene.stop();
 
         activeScene = scenes.get(name);
-        activeScene.start();
+
+        if (arg != null)
+            activeScene.start(arg);
+        else
+            activeScene.start();
 
         return true;
+    }
+
+    public boolean switchScene(String name) {
+        return switchScene(name, null);
     }
 }

@@ -2,7 +2,7 @@ package su.knst.tat.handlers.command;
 
 import su.knst.tat.BotCore;
 import su.knst.tat.event.chat.NewMessageEvent;
-import su.knst.tat.event.handler.EventListenerRemover;
+import su.knst.tat.event.handler.HandlerRemover;
 import su.knst.tat.handlers.ChatHandler;
 import su.knst.tat.utils.Message;
 import su.knst.tat.utils.MessageBuilder;
@@ -13,7 +13,7 @@ import java.util.Map;
 
 public abstract class CommandChatHandler extends ChatHandler {
     protected HashMap<String, AbstractCommand> commands = new HashMap<>();
-    protected EventListenerRemover commandsListenerRemover;
+    protected HandlerRemover commandsListenerRemover;
 
     public CommandChatHandler(BotCore core, long chatId) {
         super(core, chatId);

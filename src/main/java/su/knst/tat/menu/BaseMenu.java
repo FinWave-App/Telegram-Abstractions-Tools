@@ -3,66 +3,63 @@ package su.knst.tat.menu;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.request.InlineKeyboardButton;
 import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
-import com.pengrad.telegrambot.model.request.ParseMode;
-import com.pengrad.telegrambot.request.DeleteMessage;
-import com.pengrad.telegrambot.request.EditMessageText;
-import com.pengrad.telegrambot.request.SendMessage;
-import su.knst.tat.BotCore;
+import com.pengrad.telegrambot.response.BaseResponse;
 import su.knst.tat.event.chat.CallbackQueryEvent;
 import su.knst.tat.event.handler.EventListener;
-import su.knst.tat.event.handler.EventListenerRemover;
+import su.knst.tat.event.handler.HandlerRemover;
 import su.knst.tat.scene.BaseScene;
 import su.knst.tat.utils.CodeGenerator;
 import su.knst.tat.utils.MessageBuilder;
 import su.knst.tat.utils.Pair;
 
 import java.util.ArrayList;
+import java.util.concurrent.CompletableFuture;
 
 public class BaseMenu {
-    protected BaseScene scene;
-    protected ArrayList<Pair<InlineKeyboardButton, EventListenerRemover>> buttons = new ArrayList<>();
+    protected BaseScene<?> scene;
+    protected ArrayList<Pair<InlineKeyboardButton, HandlerRemover>> buttons = new ArrayList<>();
     protected Message sentMessage;
     protected su.knst.tat.utils.Message message;
     protected int maxButtonsInRow = 2;
-    public BaseMenu(BaseScene scene) {
+    public BaseMenu(BaseScene<?> scene) {
         this.scene = scene;
     }
 
-    public EventListenerRemover addButton(InlineKeyboardButton button, EventListener<CallbackQueryEvent> listener) {
-        EventListenerRemover eventListenerRemover;
+    public HandlerRemover addButton(InlineKeyboardButton button, EventListener<CallbackQueryEvent> listener) {
+        HandlerRemover handlerRemover;
 
         if (listener != null) {
             String code = CodeGenerator.generateRandomCode(16);
 
             button.callbackData(code);
 
-            eventListenerRemover = scene.getEventHandler().registerListener(CallbackQueryEvent.class, (e) -> {
+            handlerRemover = scene.getEventHandler().registerListener(CallbackQueryEvent.class, (e) -> {
                 if (e.data.data().equals(code))
                     listener.event(e);
             });
         } else {
-            eventListenerRemover = null;
+            handlerRemover = null;
         }
 
-        Pair<InlineKeyboardButton, EventListenerRemover> pair = new Pair<>(button, eventListenerRemover);
+        Pair<InlineKeyboardButton, HandlerRemover> pair = new Pair<>(button, handlerRemover);
 
         buttons.add(pair);
 
         return () -> {
-            if (eventListenerRemover != null)
-                eventListenerRemover.remove();
+            if (handlerRemover != null)
+                handlerRemover.remove();
 
             buttons.remove(pair);
         };
     }
 
-    public EventListenerRemover addButton(InlineKeyboardButton button) {
+    public HandlerRemover addButton(InlineKeyboardButton button) {
         return addButton(button, null);
     }
 
     public void removeAllButtons() {
         for (var pair : buttons) {
-            EventListenerRemover remover = pair.second();
+            HandlerRemover remover = pair.second();
 
             if (remover != null)
                 remover.remove();
@@ -95,14 +92,14 @@ public class BaseMenu {
         return maxButtonsInRow;
     }
 
-    public void update() {
+    protected CompletableFuture<BaseResponse> update() {
         if (sentMessage == null || message == null)
-            return;
+            return CompletableFuture.failedFuture(new IllegalStateException());
 
         if (message.keyboard == null)
             message = MessageBuilder.create(message).setKeyboard(buildKeyboard()).build();
 
-        scene.getChatHandler().editMessage(sentMessage.messageId(), message)
+        return scene.getChatHandler().editMessage(sentMessage.messageId(), message)
                 .whenComplete((r, t) -> {
                     if (t != null)
                         t.printStackTrace();
@@ -128,17 +125,17 @@ public class BaseMenu {
         return result;
     }
 
-    public void apply() {
+    public CompletableFuture<? extends BaseResponse> apply() {
         if (message == null)
-            return;
+            return CompletableFuture.failedFuture(new IllegalStateException());
 
         if (sentMessage != null)
-            delete();
+            return update();
 
         if (message.keyboard == null)
             message = MessageBuilder.create(message).setKeyboard(buildKeyboard()).build();
 
-        scene.getChatHandler().sendMessage(message).whenComplete((r, t) -> {
+        return scene.getChatHandler().sendMessage(message).whenComplete((r, t) -> {
             if (t != null) {
                 t.printStackTrace();
                 return;
@@ -148,11 +145,13 @@ public class BaseMenu {
         });
     }
 
-    public void delete() {
+    public CompletableFuture<BaseResponse> delete() {
         if (sentMessage == null)
-            return;
+            return CompletableFuture.failedFuture(new IllegalStateException());
 
-        scene.getChatHandler().deleteMessage(sentMessage.messageId());
-        this.sentMessage = null;
+        return scene.getChatHandler().deleteMessage(sentMessage.messageId()).whenComplete((r, t) -> {
+            if (t == null)
+                this.sentMessage = null;
+        });
     }
 }
