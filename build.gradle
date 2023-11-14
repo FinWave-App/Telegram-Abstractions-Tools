@@ -1,0 +1,36 @@
+plugins {
+    id 'java'
+}
+
+group 'su.knst.tat'
+version '1.0.0'
+
+archivesBaseName = 'TelegramAbstractionsTools'
+
+repositories {
+    mavenCentral()
+
+    flatDir {
+        dirs 'libs'
+    }
+}
+
+configurations.implementation.setCanBeResolved(true)
+
+dependencies {
+    implementation 'com.github.pengrad:java-telegram-bot-api:6.9.0'
+    implementation 'com.google.code.gson:gson:2.10.1'
+}
+
+jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    from(configurations.implementation.collect { it.isDirectory() ? it : zipTree(it) }) {
+        exclude 'META-INF', 'META-INF/**'
+    }
+
+    manifest {
+    }
+
+    archiveFileName.set(archivesBaseName + ".jar")
+}
