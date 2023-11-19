@@ -21,6 +21,8 @@ public class BaseMenu {
     protected Message sentMessage;
     protected su.knst.tat.utils.Message message;
     protected int maxButtonsInRow = 2;
+    protected ArrayList<Integer> buttonsInRows;
+
     public BaseMenu(BaseScene<?> scene) {
         this.scene = scene;
     }
@@ -80,6 +82,17 @@ public class BaseMenu {
         return this;
     }
 
+    public void setButtonsInRows(ArrayList<Integer> buttonsInRows) {
+        this.buttonsInRows = buttonsInRows;
+    }
+
+    public void setButtonsInRows(int... buttons) {
+        this.buttonsInRows = new ArrayList<>();
+
+        for (int b : buttons)
+            buttonsInRows.add(b);
+    }
+
     public Message getSentMessage() {
         return sentMessage;
     }
@@ -109,10 +122,10 @@ public class BaseMenu {
     protected InlineKeyboardMarkup buildKeyboard() {
         InlineKeyboardMarkup result = new InlineKeyboardMarkup();
 
-        int rows = (int)Math.ceil(buttons.size() / (float) maxButtonsInRow);
+        int rows = buttonsInRows == null ? (int)Math.ceil(buttons.size() / (float) maxButtonsInRow) : buttonsInRows.size();
 
         for (int i = 0; i < rows; i++) {
-            int buttonsInRow = Math.min(maxButtonsInRow, buttons.size() - i * maxButtonsInRow);
+            int buttonsInRow = buttonsInRows == null ? Math.min(maxButtonsInRow, buttons.size() - i * maxButtonsInRow) : buttonsInRows.get(i);
 
             InlineKeyboardButton[] row = new InlineKeyboardButton[buttonsInRow];
 
@@ -143,6 +156,12 @@ public class BaseMenu {
 
             sentMessage = r.message();
         });
+    }
+
+    public BaseMenu setSentMessage(Message sentMessage) {
+        this.sentMessage = sentMessage;
+
+        return this;
     }
 
     public CompletableFuture<BaseResponse> delete() {
