@@ -123,14 +123,17 @@ public class BaseMenu {
         InlineKeyboardMarkup result = new InlineKeyboardMarkup();
 
         int rows = buttonsInRows == null ? (int)Math.ceil(buttons.size() / (float) maxButtonsInRow) : buttonsInRows.size();
+        int addedButtons = 0;
 
         for (int i = 0; i < rows; i++) {
             int buttonsInRow = buttonsInRows == null ? Math.min(maxButtonsInRow, buttons.size() - i * maxButtonsInRow) : buttonsInRows.get(i);
 
             InlineKeyboardButton[] row = new InlineKeyboardButton[buttonsInRow];
 
-            for (int b = 0; b < row.length; b++)
-                row[b] = buttons.get(i * maxButtonsInRow + b).first();
+            for (int b = 0; b < row.length; b++) {
+                row[b] = buttons.get(addedButtons).first();
+                addedButtons++;
+            }
 
             result.addRow(row);
         }
