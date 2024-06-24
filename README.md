@@ -28,7 +28,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'su.knst.tat:telegram-abstractions-tools:2.0.2'
+    implementation 'app.finwave.tat:telegram-abstractions-tools:2.0.3'
 }
 ```
 
@@ -37,10 +37,10 @@ dependencies {
 ### Setting up the BotCore
 
 ```java
-import su.knst.tat.BotCore;
-import su.knst.tat.handlers.AbstractChatHandler;
-import su.knst.tat.handlers.AbstractGlobalHandler;
-import su.knst.tat.handlers.AbstractUserHandler;
+import app.finwave.tat.BotCore;
+import handlers.app.finwave.tat.AbstractChatHandler;
+import handlers.app.finwave.tat.AbstractGlobalHandler;
+import handlers.app.finwave.tat.AbstractUserHandler;
 
 public class MyBot {
     public static void main(String[] args) {
@@ -57,9 +57,9 @@ public class MyBot {
 ### Creating a Chat Handler
 
 ```java
-import su.knst.tat.handlers.AbstractChatHandler;
-import su.knst.tat.BotCore;
-import su.knst.tat.event.chat.NewMessageEvent;
+import handlers.app.finwave.tat.AbstractChatHandler;
+import app.finwave.tat.BotCore;
+import chat.event.app.finwave.tat.NewMessageEvent;
 
 public class MyChatHandler extends AbstractChatHandler {
     public MyChatHandler(BotCore core, long chatId) {
@@ -80,10 +80,10 @@ public class MyChatHandler extends AbstractChatHandler {
 ### Using Command Handler
 
 ```java
-import su.knst.tat.handlers.command.CommandAbstractChatHandler;
-import su.knst.tat.BotCore;
-import su.knst.tat.event.chat.NewMessageEvent;
-import su.knst.tat.handlers.command.AbstractCommand;
+import command.handlers.app.finwave.tat.CommandAbstractChatHandler;
+import app.finwave.tat.BotCore;
+import chat.event.app.finwave.tat.NewMessageEvent;
+import command.handlers.app.finwave.tat.AbstractCommand;
 
 public class MyCommandHandler extends CommandAbstractChatHandler {
     public MyCommandHandler(BotCore core, long chatId) {
@@ -102,11 +102,11 @@ public class MyCommandHandler extends CommandAbstractChatHandler {
 ### Creating a Menu
 
 ```java
-import su.knst.tat.menu.BaseMenu;
-import su.knst.tat.scene.BaseScene;
-import su.knst.tat.BotCore;
+import menu.app.finwave.tat.BaseMenu;
+import scene.app.finwave.tat.BaseScene;
+import app.finwave.tat.BotCore;
 import com.pengrad.telegrambot.model.request.InlineKeyboardButton;
-import su.knst.tat.utils.MessageBuilder;
+import utils.app.finwave.tat.MessageBuilder;
 
 public class MyMenu extends BaseMenu {
     public MyMenu(BaseScene<?> scene) {
@@ -129,8 +129,8 @@ public class MyMenu extends BaseMenu {
 ### Defining a Scene
 
 ```java
-import su.knst.tat.scene.BaseScene;
-import su.knst.tat.handlers.AbstractChatHandler;
+import scene.app.finwave.tat.BaseScene;
+import handlers.app.finwave.tat.AbstractChatHandler;
 
 public class MyScene extends BaseScene<String> {
     private MyMenu menu;

@@ -3,8 +3,8 @@ plugins {
     id("maven-publish")
 }
 
-group 'su.knst.tat'
-version '2.0.2'
+group 'app.finwave.tat'
+version '2.0.3'
 
 repositories {
     mavenCentral()
