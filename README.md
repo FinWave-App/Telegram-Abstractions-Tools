@@ -28,7 +28,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'su.knst.tat:telegram-abstractions-tools:2.0.0'
+    implementation 'su.knst.tat:telegram-abstractions-tools:2.0.1'
 }
 ```
 
