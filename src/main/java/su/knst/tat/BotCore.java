@@ -3,14 +3,11 @@ package su.knst.tat;
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.request.BaseRequest;
 import com.pengrad.telegrambot.response.BaseResponse;
-import su.knst.tat.handlers.ChatHandler;
-import su.knst.tat.handlers.GlobalHandler;
-import su.knst.tat.handlers.UserHandler;
-import su.knst.tat.utils.Pair;
+import su.knst.tat.handlers.AbstractChatHandler;
+import su.knst.tat.handlers.AbstractGlobalHandler;
+import su.knst.tat.handlers.AbstractUserHandler;
 
-import javax.swing.*;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -40,11 +37,11 @@ public class BotCore {
         this(token, 125);
     }
 
-    public void setHandlers(GlobalHandler globalHandler,
-                            Function<Long, ? extends ChatHandler> chatHandlerGenerator,
-                            Function<Long, ? extends UserHandler> userHandlerGenerator) {
+    public void setHandlers(AbstractGlobalHandler abstractGlobalHandler,
+                            Function<Long, ? extends AbstractChatHandler> chatHandlerGenerator,
+                            Function<Long, ? extends AbstractUserHandler> userHandlerGenerator) {
 
-        setUpdatesProcessor(new UpdatesProcessor(globalHandler, chatHandlerGenerator, userHandlerGenerator));
+        setUpdatesProcessor(new UpdatesProcessor(abstractGlobalHandler, chatHandlerGenerator, userHandlerGenerator));
     }
 
     public void setUpdatesProcessor(UpdatesProcessor updatesProcessor) {

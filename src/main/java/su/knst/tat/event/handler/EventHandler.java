@@ -1,6 +1,7 @@
 package su.knst.tat.event.handler;
 
 import su.knst.tat.event.Event;
+import su.knst.tat.utils.Stack;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,7 +10,7 @@ public class EventHandler<T extends Event<?>> {
     protected HashMap<Class<T>, ArrayList<EventListener<T>>> eventsListeners = new HashMap<>();
     protected HashMap<Class<T>, EventValidator<T>> eventsValidators = new HashMap<>();
 
-    protected EventHandler<T> handlerChild;
+    protected Stack<EventHandler<T>> handlerChildStack = new Stack<>();
 
     public <X extends T> HandlerRemover registerListener(Class<X> type, EventListener<X> listener) {
         if (!eventsListeners.containsKey(type))
@@ -30,8 +31,10 @@ public class EventHandler<T extends Event<?>> {
         if (eventsValidators.containsKey(event.getClass()) && !eventsValidators.get(event.getClass()).validate(event))
             return;
 
-        if (handlerChild != null) {
-            handlerChild.fire(event);
+        EventHandler<T> child = handlerChildStack.peek();
+
+        if (child != null) {
+            child.fire(event);
 
             return;
         }
@@ -45,11 +48,11 @@ public class EventHandler<T extends Event<?>> {
             listener.event(event);
     }
 
-    public void setChild(EventHandler<T> handler) {
-        this.handlerChild = handler;
+    public void pushChild(EventHandler<T> handler) {
+        this.handlerChildStack.push(handler);
     }
 
-    public void resetChild() {
-        this.handlerChild = null;
+    public void popChild() {
+        this.handlerChildStack.pop();
     }
 }

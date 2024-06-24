@@ -1,10 +1,9 @@
 package su.knst.tat.handlers.command;
 
-import com.pengrad.telegrambot.model.User;
 import su.knst.tat.event.chat.NewMessageEvent;
 
 public abstract class AbstractCommand implements CommandRunner {
-    protected CommandChatHandler chatHandler;
+    protected CommandAbstractChatHandler chatHandler;
 
     public static AbstractCommand command(String name, String description, String commandArgsTips, boolean hidden, CommandRunner runner) {
         return new AbstractCommand() {
@@ -47,7 +46,7 @@ public abstract class AbstractCommand implements CommandRunner {
         return command(name, null, runner);
     }
 
-    public void init(CommandChatHandler chatHandler) {
+    public void init(CommandAbstractChatHandler chatHandler) {
         this.chatHandler = chatHandler;
     }
 

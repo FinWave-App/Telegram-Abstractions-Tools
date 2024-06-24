@@ -3,19 +3,19 @@ package su.knst.tat.handlers.command;
 import su.knst.tat.BotCore;
 import su.knst.tat.event.chat.NewMessageEvent;
 import su.knst.tat.event.handler.HandlerRemover;
-import su.knst.tat.handlers.ChatHandler;
-import su.knst.tat.utils.Message;
+import su.knst.tat.handlers.AbstractChatHandler;
+import su.knst.tat.utils.ComposedMessage;
 import su.knst.tat.utils.MessageBuilder;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class CommandChatHandler extends ChatHandler {
+public abstract class CommandAbstractChatHandler extends AbstractChatHandler {
     protected HashMap<String, AbstractCommand> commands = new HashMap<>();
     protected HandlerRemover commandsListenerRemover;
 
-    public CommandChatHandler(BotCore core, long chatId) {
+    public CommandAbstractChatHandler(BotCore core, long chatId) {
         super(core, chatId);
 
         this.commandsListenerRemover = eventHandler.setValidator(NewMessageEvent.class, this::commandListener);
@@ -27,7 +27,7 @@ public abstract class CommandChatHandler extends ChatHandler {
         this.commands.put(command.name(), command);
     }
 
-    public Message commandsDescription() {
+    public ComposedMessage commandsDescription() {
         MessageBuilder builder = MessageBuilder.create();
 
         for (Map.Entry<String, AbstractCommand> commandEntry : commands.entrySet()) {

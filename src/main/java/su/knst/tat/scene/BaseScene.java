@@ -1,28 +1,22 @@
 package su.knst.tat.scene;
 
-import com.pengrad.telegrambot.request.SendMessage;
-import com.pengrad.telegrambot.response.SendResponse;
 import su.knst.tat.event.ChatEvent;
 import su.knst.tat.event.handler.EventHandler;
-import su.knst.tat.handlers.ChatHandler;
-import su.knst.tat.utils.Message;
-
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
+import su.knst.tat.handlers.AbstractChatHandler;
 
 public class BaseScene<T> {
-    protected ChatHandler chatHandler;
+    protected AbstractChatHandler abstractChatHandler;
     protected EventHandler<ChatEvent<?>> eventHandler;
     protected long chatId;
 
-    public BaseScene(ChatHandler chatHandler) {
-        this.chatHandler = chatHandler;
+    public BaseScene(AbstractChatHandler abstractChatHandler) {
+        this.abstractChatHandler = abstractChatHandler;
         this.eventHandler = new EventHandler<>();
-        this.chatId = chatHandler.getChatId();
+        this.chatId = abstractChatHandler.getChatId();
     }
 
     public void start() {
-        chatHandler.getEventHandler().setChild(eventHandler);
+        abstractChatHandler.getEventHandler().pushChild(eventHandler);
     }
 
     public void start(T arg) {
@@ -30,11 +24,11 @@ public class BaseScene<T> {
     }
 
     public void stop() {
-        chatHandler.getEventHandler().resetChild();
+        abstractChatHandler.getEventHandler().popChild();
     }
 
-    public ChatHandler getChatHandler() {
-        return chatHandler;
+    public AbstractChatHandler getChatHandler() {
+        return abstractChatHandler;
     }
 
     public EventHandler<ChatEvent<?>> getEventHandler() {

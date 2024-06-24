@@ -9,6 +9,7 @@ import su.knst.tat.event.handler.EventListener;
 import su.knst.tat.event.handler.HandlerRemover;
 import su.knst.tat.scene.BaseScene;
 import su.knst.tat.utils.CodeGenerator;
+import su.knst.tat.utils.ComposedMessage;
 import su.knst.tat.utils.MessageBuilder;
 import su.knst.tat.utils.Pair;
 
@@ -19,12 +20,25 @@ public class BaseMenu {
     protected BaseScene<?> scene;
     protected ArrayList<Pair<InlineKeyboardButton, HandlerRemover>> buttons = new ArrayList<>();
     protected Message sentMessage;
-    protected su.knst.tat.utils.Message message;
+    protected ComposedMessage composedMessage;
     protected int maxButtonsInRow = 2;
     protected ArrayList<Integer> buttonsInRows;
 
-    public BaseMenu(BaseScene<?> scene) {
+    public BaseMenu(BaseScene<?> scene, boolean useLastMessage) {
         this.scene = scene;
+
+        if (useLastMessage) {
+            sentMessage = scene.getChatHandler().getLastSentMessage();
+        }
+    }
+
+    public BaseMenu(BaseScene<?> scene, Message sentMessage) {
+        this.scene = scene;
+        this.sentMessage = sentMessage;
+    }
+
+    public BaseMenu(BaseScene<?> scene) {
+        this(scene, true);
     }
 
     public HandlerRemover addButton(InlineKeyboardButton button, EventListener<CallbackQueryEvent> listener) {
@@ -70,8 +84,8 @@ public class BaseMenu {
         buttons.clear();
     }
 
-    public BaseMenu setMessage(su.knst.tat.utils.Message message) {
-        this.message = message;
+    public BaseMenu setMessage(ComposedMessage composedMessage) {
+        this.composedMessage = composedMessage;
 
         return this;
     }
@@ -93,12 +107,8 @@ public class BaseMenu {
             buttonsInRows.add(b);
     }
 
-    public Message getSentMessage() {
-        return sentMessage;
-    }
-
-    public su.knst.tat.utils.Message getMessage() {
-        return message;
+    public ComposedMessage getMessage() {
+        return composedMessage;
     }
 
     public int getMaxButtonsInRow() {
@@ -106,17 +116,13 @@ public class BaseMenu {
     }
 
     protected CompletableFuture<BaseResponse> update() {
-        if (sentMessage == null || message == null)
+        if (sentMessage == null || composedMessage == null)
             return CompletableFuture.failedFuture(new IllegalStateException());
 
-        if (message.keyboard == null)
-            message = MessageBuilder.create(message).setKeyboard(buildKeyboard()).build();
+        if (composedMessage.keyboard() == null)
+            composedMessage = MessageBuilder.create(composedMessage).setKeyboard(buildKeyboard()).build();
 
-        return scene.getChatHandler().editMessage(sentMessage.messageId(), message)
-                .whenComplete((r, t) -> {
-                    if (t != null)
-                        t.printStackTrace();
-                });
+        return scene.getChatHandler().editMessage(sentMessage.messageId(), composedMessage);
     }
 
     protected InlineKeyboardMarkup buildKeyboard() {
@@ -142,16 +148,16 @@ public class BaseMenu {
     }
 
     public CompletableFuture<? extends BaseResponse> apply() {
-        if (message == null)
+        if (composedMessage == null)
             return CompletableFuture.failedFuture(new IllegalStateException());
 
         if (sentMessage != null)
             return update();
 
-        if (message.keyboard == null)
-            message = MessageBuilder.create(message).setKeyboard(buildKeyboard()).build();
+        if (composedMessage.keyboard() == null)
+            composedMessage = MessageBuilder.create(composedMessage).setKeyboard(buildKeyboard()).build();
 
-        return scene.getChatHandler().sendMessage(message).whenComplete((r, t) -> {
+        return scene.getChatHandler().sendMessage(composedMessage).whenComplete((r, t) -> {
             if (t != null) {
                 t.printStackTrace();
                 return;
@@ -159,12 +165,6 @@ public class BaseMenu {
 
             sentMessage = r.message();
         });
-    }
-
-    public BaseMenu setSentMessage(Message sentMessage) {
-        this.sentMessage = sentMessage;
-
-        return this;
     }
 
     public CompletableFuture<BaseResponse> delete() {

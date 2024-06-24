@@ -1,36 +1,79 @@
 plugins {
-    id 'java'
+    id('java')
+    id("maven-publish")
 }
 
 group 'su.knst.tat'
-version '1.0.0'
-
-archivesBaseName = 'TelegramAbstractionsTools'
+version '2.0.0'
 
 repositories {
     mavenCentral()
-
-    flatDir {
-        dirs 'libs'
-    }
 }
-
-configurations.implementation.setCanBeResolved(true)
 
 dependencies {
-    implementation 'com.github.pengrad:java-telegram-bot-api:6.9.0'
-    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'com.github.pengrad:java-telegram-bot-api:7.4.0'
+    implementation 'com.google.code.gson:gson:2.11.0'
+
+    testImplementation platform("org.junit:junit-bom:5.9.1")
+    testImplementation "org.junit.jupiter:junit-jupiter"
 }
 
-jar {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+tasks.test {
+    useJUnitPlatform()
+}
 
-    from(configurations.implementation.collect { it.isDirectory() ? it : zipTree(it) }) {
-        exclude 'META-INF', 'META-INF/**'
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            groupId = project.group
+            artifactId = 'telegram-abstractions-tools'
+            version = project.version
+
+            pom {
+                name = 'TelegramAbstractionsTools'
+                description = 'Java library for Telegram bots development'
+                url = 'https://github.com/FinWave-App/Telegram-Abstractions-Tools'
+
+                licenses {
+                    license {
+                        name = 'MIT license'
+                        url = 'https://raw.githubusercontent.com/FinWave-App/Telegram-Abstractions-Tools/main/LICENSE'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = 'knst'
+                        name = 'isKONSTANTIN'
+                        email = 'me@knst.su'
+                    }
+                }
+
+                scm {
+                    connection = 'scm:git:git://github.com/FinWave-App/Telegram-Abstractions-Tools.git'
+                    developerConnection = 'scm:git:ssh://github.com:FinWave-App/Telegram-Abstractions-Tools.git'
+                    url = 'https://github.com/FinWave-App/Telegram-Abstractions-Tools'
+                }
+            }
+        }
     }
-
-    manifest {
+    repositories {
+        maven {
+            name = "FinWaveNexus"
+            url = "https://nexus.finwave.app/repository/maven-public"
+            credentials {
+                username = System.getenv("NEXUS_DEPLOY_USERNAME")
+                password = System.getenv("NEXUS_DEPLOY_PASSWORD")
+            }
+        }
+        maven {
+            name = "GitHubPackages"
+            url = "https://maven.pkg.github.com/finwave-app/finwave-java-api"
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
     }
-
-    archiveFileName.set(archivesBaseName + ".jar")
 }

@@ -8,37 +8,37 @@ import su.knst.tat.event.user.ChosenInlineResultEvent;
 import su.knst.tat.event.user.InlineQueryEvent;
 import su.knst.tat.event.user.PreCheckoutQueryEvent;
 import su.knst.tat.event.user.ShippingQueryEvent;
-import su.knst.tat.handlers.ChatHandler;
-import su.knst.tat.handlers.GlobalHandler;
-import su.knst.tat.handlers.UserHandler;
+import su.knst.tat.handlers.AbstractChatHandler;
+import su.knst.tat.handlers.AbstractGlobalHandler;
+import su.knst.tat.handlers.AbstractUserHandler;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.function.Function;
 
 public class UpdatesProcessor implements UpdatesListener {
-    protected HashMap<Long, ChatHandler> chats = new HashMap<>();
-    protected HashMap<Long, UserHandler> users = new HashMap<>();
-    protected GlobalHandler globalHandler;
+    protected HashMap<Long, AbstractChatHandler> chats = new HashMap<>();
+    protected HashMap<Long, AbstractUserHandler> users = new HashMap<>();
+    protected AbstractGlobalHandler abstractGlobalHandler;
 
-    protected Function<Long, ? extends ChatHandler> chatHandlerGenerator;
-    protected Function<Long, ? extends UserHandler> userHandlerGenerator;
+    protected Function<Long, ? extends AbstractChatHandler> chatHandlerGenerator;
+    protected Function<Long, ? extends AbstractUserHandler> userHandlerGenerator;
 
     protected Function<Update, Boolean> updateValidator;
 
-    public UpdatesProcessor(GlobalHandler globalHandler,
-                            Function<Long, ? extends ChatHandler> chatHandlerGenerator,
-                            Function<Long, ? extends UserHandler> userHandlerGenerator) {
-        this.globalHandler = globalHandler;
+    public UpdatesProcessor(AbstractGlobalHandler abstractGlobalHandler,
+                            Function<Long, ? extends AbstractChatHandler> chatHandlerGenerator,
+                            Function<Long, ? extends AbstractUserHandler> userHandlerGenerator) {
+        this.abstractGlobalHandler = abstractGlobalHandler;
         this.chatHandlerGenerator = chatHandlerGenerator;
         this.userHandlerGenerator = userHandlerGenerator;
 
-        globalHandler.start();
+        abstractGlobalHandler.start();
     }
 
-    protected ChatHandler getOrCreateChatHandler(long chatId) {
+    protected AbstractChatHandler getOrCreateChatHandler(long chatId) {
         if (!chats.containsKey(chatId)) {
-            ChatHandler handler = chatHandlerGenerator.apply(chatId);
+            AbstractChatHandler handler = chatHandlerGenerator.apply(chatId);
             handler.start();
 
             chats.put(chatId, handler);
@@ -49,9 +49,9 @@ public class UpdatesProcessor implements UpdatesListener {
         return chats.get(chatId);
     }
 
-    protected UserHandler getOrCreateUserHandler(long userId) {
+    protected AbstractUserHandler getOrCreateUserHandler(long userId) {
         if (!users.containsKey(userId)) {
-            UserHandler handler = userHandlerGenerator.apply(userId);
+            AbstractUserHandler handler = userHandlerGenerator.apply(userId);
 
             users.put(userId, handler);
 
@@ -105,7 +105,7 @@ public class UpdatesProcessor implements UpdatesListener {
                 }
 
                 if (update.callbackQuery() != null) {
-                    long chatId = update.callbackQuery().message().chat().id();
+                    long chatId = update.callbackQuery().maybeInaccessibleMessage().chat().id();
                     long userId = update.callbackQuery().from().id();
 
                     getOrCreateChatHandler(chatId).getEventHandler().fire(new CallbackQueryEvent(updateId, userId, chatId, update.callbackQuery()));
@@ -164,7 +164,7 @@ public class UpdatesProcessor implements UpdatesListener {
                 }
 
                 if (update.poll() != null)
-                    globalHandler.getEventHandler().fire(new NewPollEvent(updateId, update.poll()));
+                    abstractGlobalHandler.getEventHandler().fire(new NewPollEvent(updateId, update.poll()));
 
             }catch (Exception e) {
                 e.printStackTrace();

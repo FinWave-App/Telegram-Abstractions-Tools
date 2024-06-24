@@ -2,8 +2,6 @@ package su.knst.tat.utils;
 
 import com.pengrad.telegrambot.model.request.Keyboard;
 import com.pengrad.telegrambot.model.request.ParseMode;
-import com.pengrad.telegrambot.model.request.ReplyKeyboardMarkup;
-import com.pengrad.telegrambot.model.request.ReplyKeyboardRemove;
 
 public class MessageBuilder {
     protected StringBuilder stringBuilder = new StringBuilder();
@@ -17,15 +15,15 @@ public class MessageBuilder {
         return new MessageBuilder();
     }
 
-    public static MessageBuilder create(Message message) {
-        return new MessageBuilder(message);
+    public static MessageBuilder create(ComposedMessage composedMessage) {
+        return new MessageBuilder(composedMessage);
     }
 
     public static MessageBuilder create(String text) {
         return new MessageBuilder(text);
     }
 
-    public static Message text(String text) {
+    public static ComposedMessage text(String text) {
         return new MessageBuilder(text).build();
     }
 
@@ -37,13 +35,13 @@ public class MessageBuilder {
         this.stringBuilder.append(text);
     }
 
-    protected MessageBuilder(Message message) {
-        this.stringBuilder.append(message.text);
-        this.keyboard = message.keyboard;
-        this.parseMode = message.parseMode;
-        this.webPagePreview = message.webPagePreview;
-        this.notification = message.notification;
-        this.replyTo = message.replyTo;
+    protected MessageBuilder(ComposedMessage composedMessage) {
+        this.stringBuilder.append(composedMessage.text());
+        this.keyboard = composedMessage.keyboard();
+        this.parseMode = composedMessage.parseMode();
+        this.webPagePreview = composedMessage.webPagePreview();
+        this.notification = composedMessage.notification();
+        this.replyTo = composedMessage.replyTo();
     }
 
     public MessageBuilder line(String content) {
@@ -153,7 +151,7 @@ public class MessageBuilder {
         return this;
     }
 
-    public Message build() {
-        return new Message(keyboard, parseMode, webPagePreview, notification, replyTo, stringBuilder.toString());
+    public ComposedMessage build() {
+        return new ComposedMessage(keyboard, parseMode, webPagePreview, notification, replyTo, stringBuilder.toString());
     }
 }
