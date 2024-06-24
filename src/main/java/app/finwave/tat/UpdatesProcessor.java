@@ -3,7 +3,6 @@ package app.finwave.tat;
 import app.finwave.tat.event.chat.*;
 import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.model.Update;
-import su.knst.tat.event.chat.*;
 import app.finwave.tat.event.global.NewPollEvent;
 import app.finwave.tat.event.user.ChosenInlineResultEvent;
 import app.finwave.tat.event.user.InlineQueryEvent;
