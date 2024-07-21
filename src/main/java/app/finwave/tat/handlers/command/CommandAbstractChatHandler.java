@@ -67,7 +67,7 @@ public abstract class CommandAbstractChatHandler extends AbstractChatHandler {
     protected boolean commandListener(NewMessageEvent event) {
         String text = event.data.text();
 
-        if (!text.startsWith("/"))
+        if (text == null || !text.startsWith("/"))
             return true;
 
         String[] commandAndArgs = text.substring(1).split(" ");
