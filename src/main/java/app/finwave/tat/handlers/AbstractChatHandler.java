@@ -30,11 +30,11 @@ public abstract class AbstractChatHandler extends AbstractContextHandler<ChatEve
     public abstract void start();
 
     public Message getLastSentMessage() {
-        return sentMessages.peek().second();
+        return sentMessages.peekOptional().map(Pair::second).orElse(null);
     }
 
     public int getLastSentMessageId() {
-        return sentMessages.peek().first();
+        return sentMessages.peekOptional().map(Pair::first).orElse(-1);
     }
 
     public void pushLastSentMessage(Message lastSentMessage) {
@@ -62,7 +62,7 @@ public abstract class AbstractChatHandler extends AbstractContextHandler<ChatEve
                     if (t != null)
                         return;
 
-                    sentMessages.push(new Pair<>(r.message().messageId(), r.message()));
+                    pushLastSentMessage(r.message());
                 });
     }
 

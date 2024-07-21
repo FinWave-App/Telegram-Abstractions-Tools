@@ -1,11 +1,14 @@
 package app.finwave.tat.utils;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public class Stack<T> {
     protected ArrayList<T> stack = new ArrayList<>();
     protected int maxSize = 0;
+    protected Consumer<T> lastItemWatcher;
+    protected T lastProvidedItem;
 
     public Stack(int maxSize) {
         this.maxSize = maxSize;
@@ -14,22 +17,38 @@ public class Stack<T> {
     public Stack() {
     }
 
+    public void setLastItemWatcher(Consumer<T> lastItemWatcher) {
+        this.lastItemWatcher = lastItemWatcher;
+    }
+
     public int getMaxSize() {
         return maxSize;
     }
 
     public void setMaxSize(int maxSize) {
+        if (maxSize < 1)
+            throw new IllegalArgumentException("maxSize must be greater than 0");
+
         this.maxSize = maxSize;
+        int currentSize = stack.size();
 
-        if (maxSize > 0 && size() > maxSize) {
-            int toRemove = size() - maxSize;
+        if (currentSize > maxSize) {
+            stack.subList(maxSize, currentSize).clear();
 
-            stack.removeAll(stack.subList(0, toRemove));
+            if (lastItemWatcher != null && maxSize == 1) {
+                lastProvidedItem = peek();
+                lastItemWatcher.accept(lastProvidedItem);
+            }
         }
     }
 
     public void push(T item) {
         stack.add(0, item);
+
+        if (lastItemWatcher != null) {
+            lastProvidedItem = item;
+            lastItemWatcher.accept(lastProvidedItem);
+        }
 
         if (maxSize <= 0 || stack.size() <= maxSize)
             return;
@@ -38,7 +57,14 @@ public class Stack<T> {
     }
 
     public T pop() {
-        return stack.isEmpty() ? null : stack.remove(0);
+        T result = stack.isEmpty() ? null : stack.remove(0);
+
+        if (lastItemWatcher != null && result != null) {
+            lastProvidedItem = peek();
+            lastItemWatcher.accept(lastProvidedItem);
+        }
+
+        return result;
     }
 
     public T peek() {
@@ -51,11 +77,27 @@ public class Stack<T> {
 
         stack.remove(index);
 
+        if (index == 0) {
+            lastProvidedItem = peek();
+            lastItemWatcher.accept(lastProvidedItem);
+        }
+
         return true;
     }
 
     public boolean remove(Predicate<? super T> predicate) {
-        return stack.removeIf(predicate);
+        boolean result = stack.removeIf(predicate);
+
+        if (result && lastItemWatcher != null) {
+            T lastItem = peek();
+
+            if (lastProvidedItem != lastItem) {
+                lastProvidedItem = lastItem;
+                lastItemWatcher.accept(lastProvidedItem);
+            }
+        }
+
+        return result;
     }
 
     public List<T> raw() {
@@ -82,6 +124,11 @@ public class Stack<T> {
         List<T> oldStack = List.copyOf(stack);
 
         stack.clear();
+
+        if (lastItemWatcher != null) {
+            lastProvidedItem = null;
+            lastItemWatcher.accept(null);
+        }
 
         return oldStack;
     }
