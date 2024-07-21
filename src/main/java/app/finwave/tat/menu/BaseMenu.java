@@ -19,7 +19,7 @@ import java.util.concurrent.CompletableFuture;
 public class BaseMenu {
     protected BaseScene<?> scene;
     protected ArrayList<Pair<InlineKeyboardButton, HandlerRemover>> buttons = new ArrayList<>();
-    protected Message sentMessage;
+    protected int sentMessage = -1;
     protected ComposedMessage composedMessage;
     protected int maxButtonsInRow = 2;
     protected ArrayList<Integer> buttonsInRows;
@@ -28,11 +28,11 @@ public class BaseMenu {
         this.scene = scene;
 
         if (useLastMessage) {
-            sentMessage = scene.getChatHandler().getLastSentMessage();
+            sentMessage = scene.getChatHandler().getLastSentMessageId();
         }
     }
 
-    public BaseMenu(BaseScene<?> scene, Message sentMessage) {
+    public BaseMenu(BaseScene<?> scene, int sentMessage) {
         this.scene = scene;
         this.sentMessage = sentMessage;
     }
@@ -116,13 +116,13 @@ public class BaseMenu {
     }
 
     protected CompletableFuture<BaseResponse> update() {
-        if (sentMessage == null || composedMessage == null)
+        if (sentMessage == -1 || composedMessage == null)
             return CompletableFuture.failedFuture(new IllegalStateException());
 
         if (composedMessage.keyboard() == null)
             composedMessage = MessageBuilder.create(composedMessage).setKeyboard(buildKeyboard()).build();
 
-        return scene.getChatHandler().editMessage(sentMessage.messageId(), composedMessage);
+        return scene.getChatHandler().editMessage(sentMessage, composedMessage);
     }
 
     protected InlineKeyboardMarkup buildKeyboard() {
@@ -151,7 +151,7 @@ public class BaseMenu {
         if (composedMessage == null)
             return CompletableFuture.failedFuture(new IllegalStateException());
 
-        if (sentMessage != null)
+        if (sentMessage != -1)
             return update();
 
         if (composedMessage.keyboard() == null)
@@ -163,17 +163,17 @@ public class BaseMenu {
                 return;
             }
 
-            sentMessage = r.message();
+            sentMessage = r.message().messageId();
         });
     }
 
     public CompletableFuture<BaseResponse> delete() {
-        if (sentMessage == null)
+        if (sentMessage == -1)
             return CompletableFuture.failedFuture(new IllegalStateException());
 
-        return scene.getChatHandler().deleteMessage(sentMessage.messageId()).whenComplete((r, t) -> {
+        return scene.getChatHandler().deleteMessage(sentMessage).whenComplete((r, t) -> {
             if (t == null)
-                this.sentMessage = null;
+                this.sentMessage = -1;
         });
     }
 }

@@ -1,6 +1,7 @@
 package app.finwave.tat.handlers;
 
 import app.finwave.tat.BotCore;
+import app.finwave.tat.utils.Pair;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
 import com.pengrad.telegrambot.request.*;
@@ -14,7 +15,7 @@ import java.util.concurrent.CompletableFuture;
 
 public abstract class AbstractChatHandler extends AbstractContextHandler<ChatEvent<?>> {
     protected final long chatId;
-    protected Stack<Message> sentMessages = new Stack<>(100);
+    protected Stack<Pair<Integer, Message>> sentMessages = new Stack<>(100);
 
     public AbstractChatHandler(BotCore core, long chatId) {
         super(core);
@@ -29,11 +30,19 @@ public abstract class AbstractChatHandler extends AbstractContextHandler<ChatEve
     public abstract void start();
 
     public Message getLastSentMessage() {
-        return sentMessages.peek();
+        return sentMessages.peek().second();
+    }
+
+    public int getLastSentMessageId() {
+        return sentMessages.peek().first();
     }
 
     public void pushLastSentMessage(Message lastSentMessage) {
-        sentMessages.push(lastSentMessage);
+        sentMessages.push(new Pair<>(lastSentMessage.messageId(), lastSentMessage));
+    }
+
+    public void pushLastSentMessageId(int lastSentMessageId) {
+        sentMessages.push(new Pair<>(lastSentMessageId, null));
     }
 
     public CompletableFuture<SendResponse> sendMessage(ComposedMessage composedMessage) {
@@ -53,7 +62,7 @@ public abstract class AbstractChatHandler extends AbstractContextHandler<ChatEve
                     if (t != null)
                         return;
 
-                    sentMessages.push(r.message());
+                    sentMessages.push(new Pair<>(r.message().messageId(), r.message()));
                 });
     }
 
@@ -76,7 +85,7 @@ public abstract class AbstractChatHandler extends AbstractContextHandler<ChatEve
                     if (t != null)
                         return;
 
-                    sentMessages.remove((m) -> m.messageId() == id);
+                    sentMessages.remove((m) -> m.first() == id);
                 });
     }
 }
