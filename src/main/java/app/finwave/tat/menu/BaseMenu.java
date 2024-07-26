@@ -115,6 +115,10 @@ public class BaseMenu {
         return maxButtonsInRow;
     }
 
+    public void setSentMessage(int sentMessage) {
+        this.sentMessage = sentMessage;
+    }
+
     protected CompletableFuture<BaseResponse> update() {
         if (sentMessage == -1 || composedMessage == null)
             return CompletableFuture.failedFuture(new IllegalStateException());
