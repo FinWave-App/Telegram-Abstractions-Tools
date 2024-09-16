@@ -1,6 +1,5 @@
 package app.finwave.tat.menu;
 
-import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.request.InlineKeyboardButton;
 import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
 import com.pengrad.telegrambot.response.BaseResponse;
@@ -16,32 +15,31 @@ import app.finwave.tat.utils.Pair;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 
-public class BaseMenu {
+public class MessageMenu<X extends AbstractButtonsLayout> {
     protected BaseScene<?> scene;
-    protected ArrayList<Pair<InlineKeyboardButton, HandlerRemover>> buttons = new ArrayList<>();
-    protected int sentMessage = -1;
+
+    protected int sentMessage;
     protected ComposedMessage composedMessage;
-    protected int maxButtonsInRow = 2;
-    protected ArrayList<Integer> buttonsInRows;
 
-    public BaseMenu(BaseScene<?> scene, boolean useLastMessage) {
-        this.scene = scene;
+    protected X layout;
 
-        if (useLastMessage) {
-            sentMessage = scene.getChatHandler().getLastSentMessageId();
-        }
-    }
-
-    public BaseMenu(BaseScene<?> scene, int sentMessage) {
+    public MessageMenu(BaseScene<?> scene, X layout, int sentMessage) {
         this.scene = scene;
         this.sentMessage = sentMessage;
+        this.layout = layout;
+
+        layout.init(this);
     }
 
-    public BaseMenu(BaseScene<?> scene) {
-        this(scene, true);
+    public MessageMenu(BaseScene<?> scene, X layout, boolean useLastMessage) {
+        this(scene, layout, useLastMessage ? scene.getChatHandler().getLastSentMessageId() : -1);
     }
 
-    public HandlerRemover addButton(InlineKeyboardButton button, EventListener<CallbackQueryEvent> listener) {
+    public MessageMenu(BaseScene<?> scene, X layout) {
+        this(scene, layout, true);
+    }
+
+    protected HandlerRemover registerButton(InlineKeyboardButton button, EventListener<CallbackQueryEvent> listener) {
         HandlerRemover handlerRemover;
 
         if (listener != null) {
@@ -57,62 +55,20 @@ public class BaseMenu {
             handlerRemover = null;
         }
 
-        Pair<InlineKeyboardButton, HandlerRemover> pair = new Pair<>(button, handlerRemover);
-
-        buttons.add(pair);
-
         return () -> {
             if (handlerRemover != null)
                 handlerRemover.remove();
-
-            buttons.remove(pair);
         };
     }
 
-    public HandlerRemover addButton(InlineKeyboardButton button) {
-        return addButton(button, null);
-    }
-
-    public void removeAllButtons() {
-        for (var pair : buttons) {
-            HandlerRemover remover = pair.second();
-
-            if (remover != null)
-                remover.remove();
-        }
-
-        buttons.clear();
-    }
-
-    public BaseMenu setMessage(ComposedMessage composedMessage) {
+    public MessageMenu setMessage(ComposedMessage composedMessage) {
         this.composedMessage = composedMessage;
 
         return this;
     }
 
-    public BaseMenu setMaxButtonsInRow(int maxButtonsInRow) {
-        this.maxButtonsInRow = maxButtonsInRow;
-
-        return this;
-    }
-
-    public void setButtonsInRows(ArrayList<Integer> buttonsInRows) {
-        this.buttonsInRows = buttonsInRows;
-    }
-
-    public void setButtonsInRows(int... buttons) {
-        this.buttonsInRows = new ArrayList<>();
-
-        for (int b : buttons)
-            buttonsInRows.add(b);
-    }
-
     public ComposedMessage getMessage() {
         return composedMessage;
-    }
-
-    public int getMaxButtonsInRow() {
-        return maxButtonsInRow;
     }
 
     public void setSentMessage(int sentMessage) {
@@ -124,31 +80,9 @@ public class BaseMenu {
             return CompletableFuture.failedFuture(new IllegalStateException());
 
         if (composedMessage.keyboard() == null)
-            composedMessage = MessageBuilder.create(composedMessage).setKeyboard(buildKeyboard()).build();
+            composedMessage = MessageBuilder.create(composedMessage).setKeyboard(layout.build()).build();
 
         return scene.getChatHandler().editMessage(sentMessage, composedMessage);
-    }
-
-    protected InlineKeyboardMarkup buildKeyboard() {
-        InlineKeyboardMarkup result = new InlineKeyboardMarkup();
-
-        int rows = buttonsInRows == null ? (int)Math.ceil(buttons.size() / (float) maxButtonsInRow) : buttonsInRows.size();
-        int addedButtons = 0;
-
-        for (int i = 0; i < rows; i++) {
-            int buttonsInRow = buttonsInRows == null ? Math.min(maxButtonsInRow, buttons.size() - i * maxButtonsInRow) : buttonsInRows.get(i);
-
-            InlineKeyboardButton[] row = new InlineKeyboardButton[buttonsInRow];
-
-            for (int b = 0; b < row.length; b++) {
-                row[b] = buttons.get(addedButtons).first();
-                addedButtons++;
-            }
-
-            result.addRow(row);
-        }
-
-        return result;
     }
 
     public CompletableFuture<? extends BaseResponse> apply() {
@@ -159,7 +93,7 @@ public class BaseMenu {
             return update();
 
         if (composedMessage.keyboard() == null)
-            composedMessage = MessageBuilder.create(composedMessage).setKeyboard(buildKeyboard()).build();
+            composedMessage = MessageBuilder.create(composedMessage).setKeyboard(layout.build()).build();
 
         return scene.getChatHandler().sendMessage(composedMessage).whenComplete((r, t) -> {
             if (t != null) {

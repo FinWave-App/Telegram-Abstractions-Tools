@@ -77,6 +77,22 @@ public abstract class AbstractChatHandler extends AbstractContextHandler<ChatEve
         return core.execute(request);
     }
 
+    public CompletableFuture<BaseResponse> answerCallbackQuery(String id, String text, boolean showAlert, String url) {
+        AnswerCallbackQuery request = new AnswerCallbackQuery(id).showAlert(showAlert);
+
+        if (text != null)
+            request.text(text);
+
+        if (url != null)
+            request.url(url);
+
+        return core.execute(request);
+    }
+
+    public CompletableFuture<BaseResponse> answerCallbackQuery(String id) {
+        return answerCallbackQuery(id, null, false, null);
+    }
+
     public CompletableFuture<BaseResponse> deleteMessage(int id) {
         DeleteMessage request = new DeleteMessage(chatId, id);
 

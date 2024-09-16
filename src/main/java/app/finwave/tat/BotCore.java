@@ -31,22 +31,20 @@ public class BotCore {
         this.bot = new TelegramBot(token);
 
         this.tasksService.scheduleAtFixedRate(this::runTask, 0, taskRunPeriod, TimeUnit.MILLISECONDS);
+        this.setUpdatesProcessor(new UpdatesProcessor());
     }
 
     public BotCore(String token) {
         this(token, 125);
     }
 
-    public void setHandlers(AbstractGlobalHandler abstractGlobalHandler,
-                            Function<Long, ? extends AbstractChatHandler> chatHandlerGenerator,
-                            Function<Long, ? extends AbstractUserHandler> userHandlerGenerator) {
-
-        setUpdatesProcessor(new UpdatesProcessor(abstractGlobalHandler, chatHandlerGenerator, userHandlerGenerator));
-    }
-
     public void setUpdatesProcessor(UpdatesProcessor updatesProcessor) {
         this.updatesProcessor = updatesProcessor;
         this.bot.setUpdatesListener(updatesProcessor);
+    }
+
+    public UpdatesProcessor getUpdatesProcessor() {
+        return updatesProcessor;
     }
 
     public <T extends BaseRequest<T, R>, R extends BaseResponse> CompletableFuture<R> execute(BaseRequest<T, R> request) {
@@ -83,9 +81,5 @@ public class BotCore {
         }finally {
             tasksLock.unlock();
         }
-    }
-
-    public UpdatesProcessor getUpdatesProcessor() {
-        return updatesProcessor;
     }
 }

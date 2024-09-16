@@ -1,22 +1,30 @@
 package app.finwave.tat.scene;
 
+import app.finwave.tat.event.chat.CallbackQueryEvent;
 import app.finwave.tat.handlers.AbstractChatHandler;
 import app.finwave.tat.event.ChatEvent;
 import app.finwave.tat.event.handler.EventHandler;
+import app.finwave.tat.handlers.scened.ScenedAbstractChatHandler;
 
 public class BaseScene<T> {
-    protected AbstractChatHandler abstractChatHandler;
+    protected ScenedAbstractChatHandler chatHandler;
     protected EventHandler<ChatEvent<?>> eventHandler;
     protected long chatId;
 
-    public BaseScene(AbstractChatHandler abstractChatHandler) {
-        this.abstractChatHandler = abstractChatHandler;
+    public BaseScene(ScenedAbstractChatHandler chatHandler) {
+        this.chatHandler = chatHandler;
         this.eventHandler = new EventHandler<>();
-        this.chatId = abstractChatHandler.getChatId();
+        this.chatId = chatHandler.getChatId();
+
+        eventHandler.setValidator(CallbackQueryEvent.class, event -> {
+            chatHandler.answerCallbackQuery(event.data.id());
+
+            return true;
+        });
     }
 
     public void start() {
-        abstractChatHandler.getEventHandler().pushChild(eventHandler);
+        chatHandler.getEventHandler().pushChild(eventHandler);
     }
 
     public void start(T arg) {
@@ -24,11 +32,11 @@ public class BaseScene<T> {
     }
 
     public void stop() {
-        abstractChatHandler.getEventHandler().popChild();
+        chatHandler.getEventHandler().popChild();
     }
 
     public AbstractChatHandler getChatHandler() {
-        return abstractChatHandler;
+        return chatHandler;
     }
 
     public EventHandler<ChatEvent<?>> getEventHandler() {
