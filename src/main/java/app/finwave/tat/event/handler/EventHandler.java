@@ -9,6 +9,7 @@ import java.util.HashMap;
 public class EventHandler<T extends Event<?>> {
     protected HashMap<Class<T>, ArrayList<EventListener<T>>> eventsListeners = new HashMap<>();
     protected HashMap<Class<T>, EventValidator<T>> eventsValidators = new HashMap<>();
+    protected EventValidator<T> globalEventsValidator;
 
     protected Stack<EventHandler<T>> handlerChildStack = new Stack<>();
 
@@ -27,7 +28,16 @@ public class EventHandler<T extends Event<?>> {
         return () -> eventsValidators.remove(type);
     }
 
+    public HandlerRemover setValidator(EventValidator<T> validator) {
+        globalEventsValidator = validator;
+
+        return () -> globalEventsValidator = null;
+    }
+
     public void fire(T event) {
+        if (globalEventsValidator != null && !globalEventsValidator.validate(event))
+            return;
+
         if (eventsValidators.containsKey(event.getClass()) && !eventsValidators.get(event.getClass()).validate(event))
             return;
 
