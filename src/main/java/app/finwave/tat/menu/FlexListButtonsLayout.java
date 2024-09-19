@@ -53,7 +53,7 @@ public class FlexListButtonsLayout extends AbstractButtonsLayout {
         int currentRowSize = 0;
 
         for (var pair : buttons) {
-            if (currentRowSize >= maxLineSize || !currentRow.isEmpty() && currentRowSize + pair.second() >= maxLineSize) {
+            if (currentRowSize >= maxLineSize || !currentRow.isEmpty() && currentRowSize + pair.second() > maxLineSize) {
                 result.addRow(currentRow.toArray(new InlineKeyboardButton[0]));
                 currentRow.clear();
                 currentRowSize = 0;
