@@ -67,6 +67,10 @@ public class MessageMenu<X extends AbstractButtonsLayout> {
         return this;
     }
 
+    public X getLayout() {
+        return layout;
+    }
+
     public ComposedMessage getMessage() {
         return composedMessage;
     }
