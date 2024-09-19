@@ -3,6 +3,7 @@ package app.finwave.tat.handlers;
 import app.finwave.tat.BotCore;
 import app.finwave.tat.utils.Pair;
 import com.pengrad.telegrambot.model.Message;
+import com.pengrad.telegrambot.model.request.ChatAction;
 import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
 import com.pengrad.telegrambot.request.*;
 import com.pengrad.telegrambot.response.BaseResponse;
@@ -11,11 +12,12 @@ import app.finwave.tat.event.ChatEvent;
 import app.finwave.tat.utils.ComposedMessage;
 import app.finwave.tat.utils.Stack;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.*;
 
 public abstract class AbstractChatHandler extends AbstractContextHandler<ChatEvent<?>> {
     protected final long chatId;
     protected Stack<Pair<Integer, Message>> sentMessages = new Stack<>(100);
+    protected ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(1);
 
     public AbstractChatHandler(BotCore core, long chatId) {
         super(core);
@@ -91,6 +93,23 @@ public abstract class AbstractChatHandler extends AbstractContextHandler<ChatEve
 
     public CompletableFuture<BaseResponse> answerCallbackQuery(String id) {
         return answerCallbackQuery(id, null, false, null);
+    }
+
+    public ScheduledFuture<?> setActionUntil(CompletableFuture<?> future, ChatAction action) {
+        var ref = new Object() {
+            ScheduledFuture<?> schedule = null;
+        };
+
+        ref.schedule = scheduledExecutor.scheduleAtFixedRate(() -> {
+            if (future.isDone()) {
+                ref.schedule.cancel(false);
+                return;
+            }
+
+            core.execute(new SendChatAction(chatId, action));
+        }, 0, 4, TimeUnit.SECONDS);
+
+        return ref.schedule;
     }
 
     public CompletableFuture<BaseResponse> deleteMessage(int id) {
