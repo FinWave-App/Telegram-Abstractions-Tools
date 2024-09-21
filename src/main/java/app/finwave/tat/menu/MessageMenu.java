@@ -18,21 +18,26 @@ import java.util.concurrent.CompletableFuture;
 public class MessageMenu<X extends AbstractButtonsLayout> {
     protected BaseScene<?> scene;
 
-    protected int sentMessage;
+    protected int useSentMessage;
+    protected boolean useLastMessage;
+
     protected ComposedMessage composedMessage;
 
     protected X layout;
 
-    public MessageMenu(BaseScene<?> scene, X layout, int sentMessage) {
+    public MessageMenu(BaseScene<?> scene, X layout, int useSentMessage) {
         this.scene = scene;
-        this.sentMessage = sentMessage;
+        this.useSentMessage = useSentMessage;
+        this.useLastMessage = false;
         this.layout = layout;
 
         layout.init(this);
     }
 
     public MessageMenu(BaseScene<?> scene, X layout, boolean useLastMessage) {
-        this(scene, layout, useLastMessage ? scene.getChatHandler().getLastSentMessageId() : -1);
+        this(scene, layout, -1);
+
+        this.useLastMessage = useLastMessage;
     }
 
     public MessageMenu(BaseScene<?> scene, X layout) {
@@ -61,7 +66,7 @@ public class MessageMenu<X extends AbstractButtonsLayout> {
         };
     }
 
-    public MessageMenu setMessage(ComposedMessage composedMessage) {
+    public MessageMenu<X> setMessage(ComposedMessage composedMessage) {
         this.composedMessage = composedMessage;
 
         return this;
@@ -75,47 +80,48 @@ public class MessageMenu<X extends AbstractButtonsLayout> {
         return composedMessage;
     }
 
-    public void setSentMessage(int sentMessage) {
-        this.sentMessage = sentMessage;
+    protected int getUseMessage() {
+        if (useLastMessage)
+            return scene.getChatHandler().getLastSentMessageId();
+
+        return useSentMessage;
     }
 
-    protected CompletableFuture<BaseResponse> update() {
-        if (sentMessage == -1 || composedMessage == null)
+    public void setUseSentMessage(int sentMessage) {
+        this.useSentMessage = sentMessage;
+    }
+
+    protected CompletableFuture<BaseResponse> update(int useMessage) {
+        if (composedMessage == null)
             return CompletableFuture.failedFuture(new IllegalStateException());
 
         if (composedMessage.keyboard() == null)
             composedMessage = MessageBuilder.create(composedMessage).setKeyboard(layout.build()).build();
 
-        return scene.getChatHandler().editMessage(sentMessage, composedMessage);
+        return scene.getChatHandler().editMessage(useMessage, composedMessage);
     }
 
     public CompletableFuture<? extends BaseResponse> apply() {
         if (composedMessage == null)
             return CompletableFuture.failedFuture(new IllegalStateException());
 
-        if (sentMessage != -1)
-            return update();
+        int useMessage = getUseMessage();
+
+        if (useMessage != -1)
+            return update(useMessage);
 
         if (composedMessage.keyboard() == null)
             composedMessage = MessageBuilder.create(composedMessage).setKeyboard(layout.build()).build();
 
-        return scene.getChatHandler().sendMessage(composedMessage).whenComplete((r, t) -> {
-            if (t != null) {
-                t.printStackTrace();
-                return;
-            }
-
-            sentMessage = r.message().messageId();
-        });
+        return scene.getChatHandler().sendMessage(composedMessage);
     }
 
     public CompletableFuture<BaseResponse> delete() {
-        if (sentMessage == -1)
+        int useMessage = getUseMessage();
+
+        if (useMessage == -1)
             return CompletableFuture.failedFuture(new IllegalStateException());
 
-        return scene.getChatHandler().deleteMessage(sentMessage).whenComplete((r, t) -> {
-            if (t == null)
-                this.sentMessage = -1;
-        });
+        return scene.getChatHandler().deleteMessage(useMessage);
     }
 }
