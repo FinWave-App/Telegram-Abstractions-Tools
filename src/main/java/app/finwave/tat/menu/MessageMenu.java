@@ -87,8 +87,14 @@ public class MessageMenu<X extends AbstractButtonsLayout> {
         return useSentMessage;
     }
 
+    public void setUseLastMessage(boolean useLastMessage) {
+        this.useSentMessage = -1;
+        this.useLastMessage = useLastMessage;
+    }
+
     public void setUseSentMessage(int sentMessage) {
         this.useSentMessage = sentMessage;
+        this.useLastMessage = false;
     }
 
     protected CompletableFuture<BaseResponse> update(int useMessage) {
