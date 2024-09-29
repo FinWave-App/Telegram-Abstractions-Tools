@@ -40,7 +40,7 @@ public class BotCore {
 
     public void setUpdatesProcessor(UpdatesProcessor updatesProcessor) {
         this.updatesProcessor = updatesProcessor;
-        this.bot.setUpdatesListener(updatesProcessor);
+        this.bot.setUpdatesListener(updatesProcessor, updatesProcessor.getUpdatesRequest());
     }
 
     public UpdatesProcessor getUpdatesProcessor() {

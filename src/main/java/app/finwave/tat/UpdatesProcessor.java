@@ -15,6 +15,7 @@ import app.finwave.tat.event.user.ShippingQueryEvent;
 import app.finwave.tat.handlers.AbstractChatHandler;
 import app.finwave.tat.handlers.AbstractGlobalHandler;
 import app.finwave.tat.handlers.AbstractUserHandler;
+import com.pengrad.telegrambot.request.GetUpdates;
 
 import java.util.HashMap;
 import java.util.List;
@@ -29,6 +30,8 @@ public class UpdatesProcessor implements UpdatesListener {
     protected Function<Long, ? extends AbstractUserHandler> userHandlerGenerator;
 
     protected Function<Update, Boolean> updateValidator;
+
+    protected GetUpdates updatesRequest = new GetUpdates().allowedUpdates("message", "message_reaction", "edited_channel_post", "callback_query");
 
     public void setAbstractGlobalHandler(AbstractGlobalHandler abstractGlobalHandler) {
         this.abstractGlobalHandler = abstractGlobalHandler;
@@ -105,17 +108,23 @@ public class UpdatesProcessor implements UpdatesListener {
         }
     }
 
+    public GetUpdates getUpdatesRequest() {
+        return updatesRequest;
+    }
+
     @Override
     public int process(List<Update> updates) {
         int lastUpdateId = CONFIRMED_UPDATES_NONE;
 
         for (Update update : updates) {
+
             if (updateValidator != null && !updateValidator.apply(update))
                 continue;
 
             try {
                 fireEvent(NewMessageEvent.fromUpdate(update));
                 fireEvent(EditedMessageEvent.fromUpdate(update));
+                fireEvent(MessageReactionEvent.fromUpdate(update));
                 fireEvent(NewChannelPostEvent.fromUpdate(update));
                 fireEvent(EditedChannelPostEvent.fromUpdate(update));
                 fireEvent(CallbackQueryEvent.fromUpdate(update));
