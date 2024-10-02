@@ -74,7 +74,7 @@ public class BotCore {
         String chatId = Optional.ofNullable(request.getParameters().get("chat_id")).map(Object::toString).orElse(null);
 
         long sendAfter;
-        long minSentDelay = request instanceof AbstractSendRequest<?> ? 50 : 1000;
+        long minSentDelay = request instanceof AbstractSendRequest<?> ? 1000 : (chatId == null ? 50 : 100);
 
         timestampLock.lock();
         try {
