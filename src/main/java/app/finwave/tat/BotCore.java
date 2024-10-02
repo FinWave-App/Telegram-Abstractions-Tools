@@ -1,17 +1,20 @@
 package app.finwave.tat;
 
 import com.pengrad.telegrambot.TelegramBot;
+import com.pengrad.telegrambot.model.User;
 import com.pengrad.telegrambot.request.BaseRequest;
+import com.pengrad.telegrambot.request.GetMe;
 import com.pengrad.telegrambot.response.BaseResponse;
 import app.finwave.tat.handlers.AbstractChatHandler;
 import app.finwave.tat.handlers.AbstractGlobalHandler;
 import app.finwave.tat.handlers.AbstractUserHandler;
+import com.pengrad.telegrambot.response.GetMeResponse;
 
 import java.util.ArrayList;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
@@ -20,22 +23,24 @@ public class BotCore {
     protected final TelegramBot bot;
     protected UpdatesProcessor updatesProcessor;
 
-    public ArrayList<Runnable> tasks = new ArrayList<>();
+    protected ScheduledExecutorService tasksService;
+    protected HashMap<Object, Long> sendTimestamps = new HashMap<>();
+    protected ReentrantLock timestampLock = new ReentrantLock();
 
-    protected ReentrantLock tasksLock = new ReentrantLock();
+    protected CompletableFuture<User> me;
 
-    protected ScheduledExecutorService tasksService = Executors.newScheduledThreadPool(1);
-
-    public BotCore(String token, long taskRunPeriod) {
+    public BotCore(String token, int corePoolSize) {
         this.token = token;
         this.bot = new TelegramBot(token);
 
-        this.tasksService.scheduleAtFixedRate(this::runTask, 0, taskRunPeriod, TimeUnit.MILLISECONDS);
+        this.tasksService = Executors.newScheduledThreadPool(corePoolSize);
         this.setUpdatesProcessor(new UpdatesProcessor());
+
+        this.me = execute(new GetMe()).thenApply(GetMeResponse::user);
     }
 
     public BotCore(String token) {
-        this(token, 125);
+        this(token, 2);
     }
 
     public void setUpdatesProcessor(UpdatesProcessor updatesProcessor) {
@@ -59,27 +64,39 @@ public class BotCore {
             }
         };
 
-        tasksLock.lock();
-
-        try {
-            tasks.add(runnable);
-        }finally {
-            tasksLock.unlock();
-        }
+        tasksService.schedule(runnable, sendCooldown(request), TimeUnit.MILLISECONDS);
 
         return future;
     }
 
-    public void runTask() {
-        tasksLock.lock();
+    protected long sendCooldown(BaseRequest<?, ?> request) {
+        Object chatId = request.getParameters().get("chat_id");
 
+        long sendAfter;
+        long minSentDelay = chatId == null ? 125 : 1000;
+
+        timestampLock.lock();
         try {
-            if (tasks.isEmpty())
-                return;
+            long sendTimestamp = sendTimestamps.getOrDefault(chatId, 0L);
+            long now = System.currentTimeMillis();
+            long lastSent = now - sendTimestamp;
 
-            tasks.remove(0).run();
+            sendAfter = Math.max(minSentDelay - lastSent, 0);
+            sendTimestamps.put(chatId, sendTimestamp + sendAfter);
         }finally {
-            tasksLock.unlock();
+            timestampLock.unlock();
         }
+
+        return sendAfter;
+    }
+
+    public Optional<User> getMe() {
+        try {
+            return Optional.ofNullable(me.get());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return Optional.empty();
     }
 }

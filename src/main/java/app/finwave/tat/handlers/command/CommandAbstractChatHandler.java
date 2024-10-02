@@ -6,10 +6,12 @@ import app.finwave.tat.event.chat.NewMessageEvent;
 import app.finwave.tat.event.handler.HandlerRemover;
 import app.finwave.tat.utils.ComposedMessage;
 import app.finwave.tat.utils.MessageBuilder;
+import com.pengrad.telegrambot.model.User;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public abstract class CommandAbstractChatHandler extends AbstractChatHandler {
     protected HashMap<String, AbstractCommand> commands = new HashMap<>();
@@ -18,7 +20,7 @@ public abstract class CommandAbstractChatHandler extends AbstractChatHandler {
     public CommandAbstractChatHandler(BotCore core, long chatId) {
         super(core, chatId);
 
-        this.commandsListenerRemover = eventHandler.setValidator(NewMessageEvent.class, this::commandListener);
+        this.commandsListenerRemover = eventHandler.setValidator(NewMessageEvent.class, (e) -> !commandListener(e));
     }
 
     public void registerCommand(AbstractCommand command) {
@@ -54,27 +56,37 @@ public abstract class CommandAbstractChatHandler extends AbstractChatHandler {
 
     }
 
-    public void runCommand(String command, NewMessageEvent event, String... args) {
+    public boolean runCommand(String command, NewMessageEvent event, String... args) {
+        if (command.contains("@")) {
+            String[] commandAndMe = command.split("@");
+            Optional<User> me = core.getMe();
+
+            if (me.isEmpty() || !commandAndMe[1].equals(me.get().username()))
+                return true;
+
+            command = commandAndMe[0];
+        }
+
         if (!commands.containsKey(command)) {
             commandNotFound(command, args, event);
 
-            return;
+            return true;
         }
 
         commands.get(command).run(args, event);
+
+        return true;
     }
 
     protected boolean commandListener(NewMessageEvent event) {
         String text = event.data.text();
 
         if (text == null || !text.startsWith("/"))
-            return true;
+            return false;
 
         String[] commandAndArgs = text.substring(1).split(" ");
         String[] args = Arrays.copyOfRange(commandAndArgs, 1, commandAndArgs.length);
 
-        runCommand(commandAndArgs[0], event, args);
-
-        return false;
+        return runCommand(commandAndArgs[0], event, args);
     }
 }
