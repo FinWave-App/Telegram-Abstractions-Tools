@@ -6,6 +6,7 @@ import app.finwave.tat.event.chat.NewMessageEvent;
 import app.finwave.tat.event.handler.HandlerRemover;
 import app.finwave.tat.utils.ComposedMessage;
 import app.finwave.tat.utils.MessageBuilder;
+import com.pengrad.telegrambot.model.Chat;
 import com.pengrad.telegrambot.model.User;
 
 import java.util.Arrays;
@@ -65,7 +66,8 @@ public abstract class CommandAbstractChatHandler extends AbstractChatHandler {
                 return true;
 
             command = commandAndMe[0];
-        }
+        }else if (event.data.chat().type() != Chat.Type.Private)
+            return true;
 
         if (!commands.containsKey(command)) {
             commandNotFound(command, args, event);
