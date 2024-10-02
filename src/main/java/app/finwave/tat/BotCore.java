@@ -2,6 +2,7 @@ package app.finwave.tat;
 
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.model.User;
+import com.pengrad.telegrambot.request.AbstractSendRequest;
 import com.pengrad.telegrambot.request.BaseRequest;
 import com.pengrad.telegrambot.request.GetMe;
 import com.pengrad.telegrambot.response.BaseResponse;
@@ -73,7 +74,7 @@ public class BotCore {
         String chatId = Optional.ofNullable(request.getParameters().get("chat_id")).map(Object::toString).orElse(null);
 
         long sendAfter;
-        long minSentDelay = chatId == null ? 125 : 1000;
+        long minSentDelay = request instanceof AbstractSendRequest<?> ? 50 : 1000;
 
         timestampLock.lock();
         try {
@@ -82,7 +83,7 @@ public class BotCore {
             long lastSent = now - sendTimestamp;
 
             sendAfter = Math.max(minSentDelay - lastSent, 0);
-            sendTimestamps.put(chatId, sendTimestamp + sendAfter);
+            sendTimestamps.put(chatId, sendTimestamp == 0 ? now : sendTimestamp + sendAfter);
         }finally {
             timestampLock.unlock();
         }
