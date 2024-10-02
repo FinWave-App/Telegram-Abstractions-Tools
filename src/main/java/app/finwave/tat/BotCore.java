@@ -70,7 +70,7 @@ public class BotCore {
     }
 
     protected long sendCooldown(BaseRequest<?, ?> request) {
-        Object chatId = request.getParameters().get("chat_id");
+        String chatId = Optional.ofNullable(request.getParameters().get("chat_id")).map(Object::toString).orElse(null);
 
         long sendAfter;
         long minSentDelay = chatId == null ? 125 : 1000;
