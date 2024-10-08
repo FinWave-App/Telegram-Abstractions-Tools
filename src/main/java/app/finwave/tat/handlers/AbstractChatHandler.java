@@ -61,7 +61,7 @@ public abstract class AbstractChatHandler extends AbstractContextHandler<ChatEve
 
         return core.execute(request)
                 .whenComplete((r, t) -> {
-                    if (t != null)
+                    if (t != null || r.message() == null)
                         return;
 
                     pushLastSentMessage(r.message());
