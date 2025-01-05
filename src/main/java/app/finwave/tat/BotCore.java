@@ -46,6 +46,7 @@ public class BotCore {
 
     public void shutdown() {
         tasksService.shutdown();
+        bot.removeGetUpdatesListener();
         bot.shutdown();
     }
 
