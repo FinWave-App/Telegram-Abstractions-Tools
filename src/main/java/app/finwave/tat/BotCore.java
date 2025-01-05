@@ -44,6 +44,11 @@ public class BotCore {
         this(token, 2);
     }
 
+    public void shutdown() {
+        tasksService.shutdown();
+        bot.shutdown();
+    }
+
     public void setUpdatesProcessor(UpdatesProcessor updatesProcessor) {
         this.updatesProcessor = updatesProcessor;
         this.bot.setUpdatesListener(updatesProcessor, updatesProcessor.getUpdatesRequest());
