@@ -5,6 +5,7 @@ import app.finwave.tat.utils.Pair;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.request.ChatAction;
 import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
+import com.pengrad.telegrambot.model.request.LabeledPrice;
 import com.pengrad.telegrambot.request.*;
 import com.pengrad.telegrambot.response.BaseResponse;
 import com.pengrad.telegrambot.response.SendResponse;
@@ -13,6 +14,7 @@ import app.finwave.tat.utils.ComposedMessage;
 import app.finwave.tat.utils.Stack;
 
 import java.util.concurrent.*;
+import java.util.function.Supplier;
 
 public abstract class AbstractChatHandler extends AbstractContextHandler<ChatEvent<?>> {
     protected final long chatId;
@@ -45,6 +47,18 @@ public abstract class AbstractChatHandler extends AbstractContextHandler<ChatEve
 
     public void pushLastSentMessageId(int lastSentMessageId) {
         sentMessages.push(new Pair<>(lastSentMessageId, null));
+    }
+
+    public CompletableFuture<SendResponse> sendInvoice(String title, String description, String payload, String currency, LabeledPrice... prices) {
+        SendInvoice request = new SendInvoice(chatId, title, description, payload, currency, prices);
+
+        return core.execute(request)
+                .whenComplete((r, t) -> {
+                    if (t != null || r.message() == null)
+                        return;
+
+                    pushLastSentMessage(r.message());
+                });
     }
 
     public CompletableFuture<SendResponse> sendMessage(ComposedMessage composedMessage) {
@@ -95,7 +109,7 @@ public abstract class AbstractChatHandler extends AbstractContextHandler<ChatEve
         return answerCallbackQuery(id, null, false, null);
     }
 
-    public ScheduledFuture<?> setActionUntil(CompletableFuture<?> future, ChatAction action) {
+    public ScheduledFuture<?> setActionUntil(CompletableFuture<?> future, Supplier<ChatAction> action) {
         var ref = new Object() {
             ScheduledFuture<?> schedule = null;
         };
@@ -106,10 +120,14 @@ public abstract class AbstractChatHandler extends AbstractContextHandler<ChatEve
                 return;
             }
 
-            core.execute(new SendChatAction(chatId, action));
+            core.execute(new SendChatAction(chatId, action.get()));
         }, 0, 4, TimeUnit.SECONDS);
 
         return ref.schedule;
+    }
+
+    public ScheduledFuture<?> setActionUntil(CompletableFuture<?> future, ChatAction action) {
+        return setActionUntil(future, () -> action);
     }
 
     public CompletableFuture<BaseResponse> deleteMessage(int id) {

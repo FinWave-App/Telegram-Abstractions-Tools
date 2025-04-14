@@ -59,7 +59,7 @@ public class BotCore {
         return updatesProcessor;
     }
 
-    public <T extends BaseRequest<T, R>, R extends BaseResponse> CompletableFuture<R> execute(BaseRequest<T, R> request) {
+    public <T extends BaseRequest<T, R>, R extends BaseResponse> CompletableFuture<R> execute(BaseRequest<T, R> request, boolean now) {
         CompletableFuture<R> future = new CompletableFuture<>();
 
         Runnable runnable = () -> {
@@ -71,9 +71,17 @@ public class BotCore {
             }
         };
 
-        tasksService.schedule(runnable, sendCooldown(request), TimeUnit.MILLISECONDS);
+        if (now) {
+            tasksService.execute(runnable);
+        }else {
+            tasksService.schedule(runnable, sendCooldown(request), TimeUnit.MILLISECONDS);
+        }
 
         return future;
+    }
+
+    public <T extends BaseRequest<T, R>, R extends BaseResponse> CompletableFuture<R> execute(BaseRequest<T, R> request) {
+        return execute(request, false);
     }
 
     protected long sendCooldown(BaseRequest<?, ?> request) {
