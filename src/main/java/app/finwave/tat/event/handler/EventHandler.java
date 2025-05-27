@@ -1,5 +1,6 @@
 package app.finwave.tat.event.handler;
 
+import app.finwave.tat.event.ChatEvent;
 import app.finwave.tat.event.Event;
 import app.finwave.tat.utils.Stack;
 
@@ -64,5 +65,9 @@ public class EventHandler<T extends Event<?>> {
 
     public void popChild() {
         this.handlerChildStack.pop();
+    }
+
+    public <X extends T> int getEventSubscribers(Class<X> eventType) {
+        return eventsListeners.get(eventType).size();
     }
 }

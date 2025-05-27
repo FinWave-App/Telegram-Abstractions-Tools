@@ -8,7 +8,7 @@ import app.finwave.tat.utils.Stack;
 import java.util.HashMap;
 
 public abstract class ScenedAbstractChatHandler extends CommandAbstractChatHandler {
-    protected Stack<BaseScene> activeScenes = new Stack<>();
+    protected BaseScene activeScene;
     protected HashMap<String, BaseScene> scenes = new HashMap<>();
 
     public ScenedAbstractChatHandler(BotCore core, long chatId) {
@@ -23,6 +23,8 @@ public abstract class ScenedAbstractChatHandler extends CommandAbstractChatHandl
         if (!scenes.containsKey(name))
             return false;
 
+        stopActiveScene();
+
         BaseScene newScene = scenes.get(name);
 
         if (arg != null)
@@ -30,7 +32,7 @@ public abstract class ScenedAbstractChatHandler extends CommandAbstractChatHandl
         else
             newScene.start();
 
-        activeScenes.push(newScene);
+        activeScene = newScene;
 
         return true;
     }
@@ -40,16 +42,11 @@ public abstract class ScenedAbstractChatHandler extends CommandAbstractChatHandl
     }
 
     public boolean stopActiveScene() {
-        if (activeScenes.isEmpty())
+        if (activeScene == null)
             return false;
 
-        activeScenes.pop().stop();
-
-        return true;
-    }
-
-    public boolean stopAll() {
-        activeScenes.clear().forEach(BaseScene::stop);
+        activeScene.stop();
+        activeScene = null;
 
         return true;
     }
