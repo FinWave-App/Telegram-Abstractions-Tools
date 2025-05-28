@@ -9,8 +9,11 @@ import java.util.HashMap;
 
 public class EventHandler<T extends Event<?>> {
     protected HashMap<Class<T>, ArrayList<EventListener<T>>> eventsListeners = new HashMap<>();
+
     protected HashMap<Class<T>, EventValidator<T>> eventsValidators = new HashMap<>();
     protected EventValidator<T> globalEventsValidator;
+
+    protected HashMap<Class<T>, PostEventListener<T>> postEventsListeners = new HashMap<>();
 
     protected Stack<EventHandler<T>> handlerChildStack = new Stack<>();
 
@@ -29,34 +32,53 @@ public class EventHandler<T extends Event<?>> {
         return () -> eventsValidators.remove(type);
     }
 
+    public <X extends T> HandlerRemover setPostEventsListener(Class<X> type, PostEventListener<X> validator) {
+        postEventsListeners.put((Class<T>)type, (PostEventListener<T>) validator);
+
+        return () -> postEventsListeners.remove(type);
+    }
+
     public HandlerRemover setValidator(EventValidator<T> validator) {
         globalEventsValidator = validator;
 
         return () -> globalEventsValidator = null;
     }
 
-    public void fire(T event) {
-        if (globalEventsValidator != null && !globalEventsValidator.validate(event))
-            return;
+    public boolean fire(T event) {
+        Class<? extends Event> eventClass = event.getClass();
+        boolean someoneAccept = false;
 
-        if (eventsValidators.containsKey(event.getClass()) && !eventsValidators.get(event.getClass()).validate(event))
-            return;
+        try {
+            if (globalEventsValidator != null && !globalEventsValidator.validate(event))
+                return someoneAccept;
 
-        EventHandler<T> child = handlerChildStack.peek();
+            if (eventsValidators.containsKey(eventClass) && !eventsValidators.get(eventClass).validate(event))
+                return someoneAccept;
 
-        if (child != null) {
-            child.fire(event);
+            EventHandler<T> child = handlerChildStack.peek();
 
-            return;
+            if (child != null) {
+                someoneAccept = child.fire(event);
+
+                return someoneAccept;
+            }
+
+            ArrayList<EventListener<T>> listeners = eventsListeners.get(eventClass);
+
+            if (listeners == null)
+                return someoneAccept;
+
+            for (EventListener<T> listener : new ArrayList<>(listeners)) {
+                boolean status = listener.event(event);
+
+                if (status)
+                    someoneAccept = true;
+            }
+
+            return someoneAccept;
+        }finally {
+            postEventsListeners.get(eventClass).postEvent(event, someoneAccept);
         }
-
-        ArrayList<EventListener<T>> listeners = eventsListeners.get(event.getClass());
-
-        if (listeners == null)
-            return;
-
-        for (EventListener<T> listener : new ArrayList<>(listeners))
-            listener.event(event);
     }
 
     public void pushChild(EventHandler<T> handler) {

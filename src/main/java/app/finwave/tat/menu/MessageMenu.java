@@ -53,8 +53,10 @@ public class MessageMenu<X extends AbstractButtonsLayout> {
             button.callbackData(code);
 
             handlerRemover = scene.getEventHandler().registerListener(CallbackQueryEvent.class, (e) -> {
-                if (e.data.data().equals(code))
-                    listener.event(e);
+                if (!e.data.data().equals(code))
+                    return false;
+
+                return listener.event(e);
             });
         } else {
             handlerRemover = null;

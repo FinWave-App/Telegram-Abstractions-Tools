@@ -16,10 +16,13 @@ public class BaseScene<T> {
         this.eventHandler = new EventHandler<>();
         this.chatId = chatHandler.getChatId();
 
-        eventHandler.setValidator(CallbackQueryEvent.class, event -> {
-            chatHandler.answerCallbackQuery(event.data.id());
+        eventHandler.setPostEventsListener(CallbackQueryEvent.class, (event, someoneHandled) -> {
+            if (!someoneHandled) {
+                chatHandler.deleteMessage(event.data.maybeInaccessibleMessage().messageId());
+                return;
+            }
 
-            return true;
+            chatHandler.answerCallbackQuery(event.data.id());
         });
     }
 
