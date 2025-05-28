@@ -77,7 +77,10 @@ public class EventHandler<T extends Event<?>> {
 
             return someoneAccept;
         }finally {
-            postEventsListeners.get(eventClass).postEvent(event, someoneAccept);
+            var postHandler = postEventsListeners.get(eventClass);
+
+            if (postHandler != null)
+                postHandler.postEvent(event, someoneAccept);
         }
     }
 
