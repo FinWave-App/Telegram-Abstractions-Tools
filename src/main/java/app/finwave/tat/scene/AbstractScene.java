@@ -6,12 +6,12 @@ import app.finwave.tat.event.ChatEvent;
 import app.finwave.tat.event.handler.EventHandler;
 import app.finwave.tat.handlers.scened.ScenedAbstractChatHandler;
 
-public class BaseScene<T> {
+public abstract class AbstractScene<T> {
     protected ScenedAbstractChatHandler chatHandler;
     protected EventHandler<ChatEvent<?>> eventHandler;
     protected long chatId;
 
-    public BaseScene(ScenedAbstractChatHandler chatHandler) {
+    public AbstractScene(ScenedAbstractChatHandler chatHandler) {
         this.chatHandler = chatHandler;
         this.eventHandler = new EventHandler<>();
         this.chatId = chatHandler.getChatId();
@@ -26,17 +26,11 @@ public class BaseScene<T> {
         });
     }
 
-    public void start() {
-        chatHandler.getEventHandler().pushChild(eventHandler);
-    }
+    public abstract void start(T arg);
 
-    public void start(T arg) {
-        start();
-    }
+    public abstract void stop();
 
-    public void stop() {
-        chatHandler.getEventHandler().popChild();
-    }
+    public abstract String name();
 
     public AbstractChatHandler getChatHandler() {
         return chatHandler;

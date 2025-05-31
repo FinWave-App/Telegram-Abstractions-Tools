@@ -18,7 +18,6 @@ import java.util.function.Supplier;
 
 public abstract class AbstractChatHandler extends AbstractContextHandler<ChatEvent<?>> {
     protected final long chatId;
-    protected Stack<Pair<Integer, Message>> sentMessages = new Stack<>(100);
     protected ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(1);
 
     public AbstractChatHandler(BotCore core, long chatId) {
@@ -33,32 +32,10 @@ public abstract class AbstractChatHandler extends AbstractContextHandler<ChatEve
 
     public abstract void start();
 
-    public Message getLastSentMessage() {
-        return sentMessages.peekOptional().map(Pair::second).orElse(null);
-    }
-
-    public int getLastSentMessageId() {
-        return sentMessages.peekOptional().map(Pair::first).orElse(-1);
-    }
-
-    public void pushLastSentMessage(Message lastSentMessage) {
-        sentMessages.push(new Pair<>(lastSentMessage.messageId(), lastSentMessage));
-    }
-
-    public void pushLastSentMessageId(int lastSentMessageId) {
-        sentMessages.push(new Pair<>(lastSentMessageId, null));
-    }
-
     public CompletableFuture<SendResponse> sendInvoice(String title, String description, String payload, String currency, LabeledPrice... prices) {
         SendInvoice request = new SendInvoice(chatId, title, description, payload, currency, prices);
 
-        return core.execute(request)
-                .whenComplete((r, t) -> {
-                    if (t != null || r.message() == null)
-                        return;
-
-                    pushLastSentMessage(r.message());
-                });
+        return core.execute(request);
     }
 
     public CompletableFuture<SendResponse> sendMessage(ComposedMessage composedMessage) {
@@ -73,13 +50,7 @@ public abstract class AbstractChatHandler extends AbstractContextHandler<ChatEve
         if (composedMessage.replyTo() != -1)
             request = request.replyToMessageId(composedMessage.replyTo());
 
-        return core.execute(request)
-                .whenComplete((r, t) -> {
-                    if (t != null || r.message() == null)
-                        return;
-
-                    pushLastSentMessage(r.message());
-                });
+        return core.execute(request);
     }
 
     public CompletableFuture<BaseResponse> editMessage(int id, ComposedMessage newComposedMessage) {
@@ -133,12 +104,6 @@ public abstract class AbstractChatHandler extends AbstractContextHandler<ChatEve
     public CompletableFuture<BaseResponse> deleteMessage(int id) {
         DeleteMessage request = new DeleteMessage(chatId, id);
 
-        return core.execute(request)
-                .whenComplete((r, t) -> {
-                    if (t != null)
-                        return;
-
-                    sentMessages.remove((m) -> m.first() == id);
-                });
+        return core.execute(request);
     }
 }

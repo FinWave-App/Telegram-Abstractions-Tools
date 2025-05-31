@@ -8,6 +8,7 @@ import com.pengrad.telegrambot.model.request.InlineKeyboardButton;
 import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
 
 import java.util.ArrayList;
+import java.util.function.Consumer;
 
 public class FlexListButtonsLayout extends AbstractButtonsLayout {
     protected ArrayList<Pair<InlineKeyboardButton, Integer>> buttons = new ArrayList<>();
@@ -21,7 +22,7 @@ public class FlexListButtonsLayout extends AbstractButtonsLayout {
         this.maxLineSize = maxLineSize;
     }
 
-    public HandlerRemover addButton(InlineKeyboardButton button, int size, EventListener<CallbackQueryEvent> listener) {
+    public HandlerRemover addButton(InlineKeyboardButton button, int size, Consumer<CallbackQueryEvent> listener) {
         HandlerRemover remover = super.addButton(button, listener);
         var pair = Pair.of(button, size);
 
@@ -34,7 +35,7 @@ public class FlexListButtonsLayout extends AbstractButtonsLayout {
     }
 
     @Override
-    public HandlerRemover addButton(InlineKeyboardButton button, EventListener<CallbackQueryEvent> listener) {
+    public HandlerRemover addButton(InlineKeyboardButton button, Consumer<CallbackQueryEvent> listener) {
         return this.addButton(button, 1, listener);
     }
 

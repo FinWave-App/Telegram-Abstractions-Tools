@@ -7,6 +7,7 @@ import com.pengrad.telegrambot.model.request.InlineKeyboardButton;
 import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
 
 import java.util.ArrayList;
+import java.util.function.Consumer;
 
 public class ListButtonsLayout extends AbstractButtonsLayout {
     protected ArrayList<InlineKeyboardButton> buttons = new ArrayList<>();
@@ -25,7 +26,7 @@ public class ListButtonsLayout extends AbstractButtonsLayout {
     }
 
     @Override
-    public HandlerRemover addButton(InlineKeyboardButton button, EventListener<CallbackQueryEvent> listener) {
+    public HandlerRemover addButton(InlineKeyboardButton button, Consumer<CallbackQueryEvent> listener) {
         HandlerRemover remover = super.addButton(button, listener);
 
         buttons.add(button);

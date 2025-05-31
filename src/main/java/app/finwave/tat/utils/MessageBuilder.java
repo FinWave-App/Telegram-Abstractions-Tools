@@ -15,7 +15,7 @@ public class MessageBuilder {
         return new MessageBuilder();
     }
 
-    public static MessageBuilder create(ComposedMessage composedMessage) {
+    public static MessageBuilder as(ComposedMessage composedMessage) {
         return new MessageBuilder(composedMessage);
     }
 

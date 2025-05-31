@@ -9,6 +9,7 @@ import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class RowsButtonsLayout extends AbstractButtonsLayout {
     protected ArrayList<ArrayList<InlineKeyboardButton>> grid = new ArrayList<>();
@@ -17,7 +18,7 @@ public class RowsButtonsLayout extends AbstractButtonsLayout {
         insertRow();
     }
 
-    public HandlerRemover appendRow(InlineKeyboardButton button, EventListener<CallbackQueryEvent> listener) {
+    public HandlerRemover appendRow(InlineKeyboardButton button, Consumer<CallbackQueryEvent> listener) {
         HandlerRemover remover = super.addButton(button, listener);
 
         ArrayList<InlineKeyboardButton> row = grid.get(grid.size() - 1);
@@ -29,7 +30,7 @@ public class RowsButtonsLayout extends AbstractButtonsLayout {
         };
     }
 
-    public HandlerRemover insertRow(List<Pair<InlineKeyboardButton, EventListener<CallbackQueryEvent>>> buttons) {
+    public HandlerRemover insertRow(List<Pair<InlineKeyboardButton, Consumer<CallbackQueryEvent>>> buttons) {
         insertRow();
 
         List<HandlerRemover> removers = buttons.stream()
@@ -44,7 +45,7 @@ public class RowsButtonsLayout extends AbstractButtonsLayout {
     }
 
     @Override
-    public HandlerRemover addButton(InlineKeyboardButton button, EventListener<CallbackQueryEvent> listener) {
+    public HandlerRemover addButton(InlineKeyboardButton button, Consumer<CallbackQueryEvent> listener) {
         return appendRow(button, listener);
     }
 
