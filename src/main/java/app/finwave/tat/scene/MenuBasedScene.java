@@ -27,6 +27,10 @@ public abstract class MenuBasedScene<T> extends AbstractScene<T> {
         if (menu == null)
             throw new IllegalArgumentException("Menu not found: " + name);
 
+        return show(menu);
+    }
+
+    protected CompletableFuture<? extends BaseResponse> show(AbstractMessageMenu<?> menu) {
         CompletableFuture<? extends BaseResponse> response = menuMessageId != -1 ? menu.apply(menuMessageId) : menu.apply();
 
         return response.whenComplete((r, t) -> {
