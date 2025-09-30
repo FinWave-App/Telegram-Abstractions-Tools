@@ -2,10 +2,12 @@ package app.finwave.tat.handlers;
 
 import app.finwave.tat.BotCore;
 import app.finwave.tat.utils.Pair;
+import com.pengrad.telegrambot.model.LinkPreviewOptions;
 import com.pengrad.telegrambot.model.Message;
 import com.pengrad.telegrambot.model.request.ChatAction;
 import com.pengrad.telegrambot.model.request.InlineKeyboardMarkup;
 import com.pengrad.telegrambot.model.request.LabeledPrice;
+import com.pengrad.telegrambot.model.request.ReplyParameters;
 import com.pengrad.telegrambot.request.*;
 import com.pengrad.telegrambot.response.BaseResponse;
 import com.pengrad.telegrambot.response.SendResponse;
@@ -13,6 +15,8 @@ import app.finwave.tat.event.ChatEvent;
 import app.finwave.tat.utils.ComposedMessage;
 import app.finwave.tat.utils.Stack;
 
+import java.io.File;
+import java.util.List;
 import java.util.concurrent.*;
 import java.util.function.Supplier;
 
@@ -32,34 +36,53 @@ public abstract class AbstractChatHandler extends AbstractContextHandler<ChatEve
 
     public abstract void start();
 
-    public CompletableFuture<SendResponse> sendInvoice(String title, String description, String payload, String currency, LabeledPrice... prices) {
+    public CompletableFuture<SendResponse> sendInvoice(String title, String description, String payload, String currency, List<LabeledPrice> prices) {
         SendInvoice request = new SendInvoice(chatId, title, description, payload, currency, prices);
 
         return core.execute(request);
     }
 
+    public CompletableFuture<SendResponse> sendFile(String url, boolean asPhoto) {
+        if (asPhoto)
+            return core.execute(new SendPhoto(chatId, url));
+
+        return core.execute(new SendDocument(chatId, url));
+    }
+
+    public CompletableFuture<SendResponse> sendFile(File file, boolean asPhoto) {
+        if (asPhoto)
+            return core.execute(new SendPhoto(chatId, file));
+
+        return core.execute(new SendDocument(chatId, file));
+    }
+
     public CompletableFuture<SendResponse> sendMessage(ComposedMessage composedMessage) {
         SendMessage request = new SendMessage(chatId, composedMessage.text())
                 .parseMode(composedMessage.parseMode())
-                .disableWebPagePreview(!composedMessage.webPagePreview())
+                .protectContent(composedMessage.protectContent())
                 .disableNotification(!composedMessage.notification());
 
         if (composedMessage.keyboard() != null)
             request = request.replyMarkup(composedMessage.keyboard());
 
-        if (composedMessage.replyTo() != -1)
-            request = request.replyToMessageId(composedMessage.replyTo());
+        if (composedMessage.replyParameters() != null)
+            request = request.replyParameters(composedMessage.replyParameters());
+
+        if (composedMessage.linkPreviewOptions() != null)
+            request = request.linkPreviewOptions(composedMessage.linkPreviewOptions());
 
         return core.execute(request);
     }
 
     public CompletableFuture<BaseResponse> editMessage(int id, ComposedMessage newComposedMessage) {
         EditMessageText request = new EditMessageText(chatId, id, newComposedMessage.text())
-                .parseMode(newComposedMessage.parseMode())
-                .disableWebPagePreview(!newComposedMessage.webPagePreview());
+                .parseMode(newComposedMessage.parseMode());
 
-        if (newComposedMessage.keyboard() instanceof InlineKeyboardMarkup)
+        if (newComposedMessage.keyboard() != null)
             request = request.replyMarkup((InlineKeyboardMarkup) newComposedMessage.keyboard());
+
+        if (newComposedMessage.linkPreviewOptions() != null)
+            request = request.linkPreviewOptions(newComposedMessage.linkPreviewOptions());
 
         return core.execute(request);
     }

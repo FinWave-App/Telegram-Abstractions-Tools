@@ -5,7 +5,6 @@ import app.finwave.tat.handlers.AbstractChatHandler;
 import app.finwave.tat.event.chat.NewMessageEvent;
 import app.finwave.tat.event.handler.HandlerRemover;
 import app.finwave.tat.utils.ComposedMessage;
-import app.finwave.tat.utils.MessageBuilder;
 import com.pengrad.telegrambot.model.Chat;
 import com.pengrad.telegrambot.model.User;
 
@@ -31,7 +30,7 @@ public abstract class CommandAbstractChatHandler extends AbstractChatHandler {
     }
 
     public ComposedMessage commandsDescription() {
-        MessageBuilder builder = MessageBuilder.create();
+        ComposedMessage.Builder builder = ComposedMessage.builder();
 
         for (Map.Entry<String, AbstractCommand> commandEntry : commands.entrySet()) {
             if (commandEntry.getValue().hidden())

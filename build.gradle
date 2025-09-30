@@ -5,15 +5,15 @@ plugins {
 }
 
 group 'app.finwave.tat'
-version '5.0.1'
+version '6.0.0'
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    api 'com.github.pengrad:java-telegram-bot-api:7.11.0'
-
+    api 'com.github.pengrad:java-telegram-bot-api:9.2.0'
+    api 'com.google.guava:guava:33.5.0-jre'
     testImplementation platform("org.junit:junit-bom:5.9.1")
     testImplementation "org.junit.jupiter:junit-jupiter"
 }
@@ -64,14 +64,6 @@ publishing {
         }
     }
     repositories {
-        maven {
-            name = "FinWaveNexus"
-            url = "https://nexus.finwave.app/repository/maven-public"
-            credentials {
-                username = System.getenv("NEXUS_DEPLOY_USERNAME")
-                password = System.getenv("NEXUS_DEPLOY_PASSWORD")
-            }
-        }
         maven {
             name = "GitHubPackages"
             url = "https://maven.pkg.github.com/finwave-app/telegram-abstractions-tools"

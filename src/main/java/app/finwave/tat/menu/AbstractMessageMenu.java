@@ -7,11 +7,9 @@ import app.finwave.tat.event.chat.CallbackQueryEvent;
 import app.finwave.tat.scene.AbstractScene;
 import app.finwave.tat.utils.CodeGenerator;
 import app.finwave.tat.utils.ComposedMessage;
-import app.finwave.tat.utils.MessageBuilder;
 import com.pengrad.telegrambot.response.SendResponse;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
 public abstract class AbstractMessageMenu<X extends AbstractButtonsLayout> {
@@ -48,7 +46,7 @@ public abstract class AbstractMessageMenu<X extends AbstractButtonsLayout> {
         if (message.keyboard() != null)
             return message;
 
-        return MessageBuilder.as(message).setKeyboard(layout.build()).build();
+        return message.toBuilder().keyboard(layout.build()).build();
     }
 
     protected CompletableFuture<BaseResponse> update() {

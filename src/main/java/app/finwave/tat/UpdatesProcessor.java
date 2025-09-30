@@ -4,7 +4,7 @@ import app.finwave.tat.event.ChatEvent;
 import app.finwave.tat.event.Event;
 import app.finwave.tat.event.UserEvent;
 import app.finwave.tat.event.chat.*;
-import app.finwave.tat.handlers.AbstractContextHandler;
+import com.google.common.cache.LoadingCache;
 import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.model.Update;
 import app.finwave.tat.event.global.NewPollEvent;
@@ -17,17 +17,15 @@ import app.finwave.tat.handlers.AbstractGlobalHandler;
 import app.finwave.tat.handlers.AbstractUserHandler;
 import com.pengrad.telegrambot.request.GetUpdates;
 
-import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
 public class UpdatesProcessor implements UpdatesListener {
-    protected HashMap<Long, AbstractChatHandler> chats = new HashMap<>();
-    protected HashMap<Long, AbstractUserHandler> users = new HashMap<>();
+    protected LoadingCache<Long, AbstractChatHandler> chatsCache;
+    protected LoadingCache<Long, AbstractUserHandler> usersCache;
 
     protected AbstractGlobalHandler abstractGlobalHandler;
-    protected Function<Long, ? extends AbstractChatHandler> chatHandlerGenerator;
-    protected Function<Long, ? extends AbstractUserHandler> userHandlerGenerator;
 
     protected Function<Update, Boolean> updateValidator;
 
@@ -39,71 +37,40 @@ public class UpdatesProcessor implements UpdatesListener {
             "chat_join_request"
     );
 
+    public void setUsersCache(LoadingCache<Long, AbstractUserHandler> usersCache) {
+        this.usersCache = usersCache;
+    }
+
+    public void setChatsCache(LoadingCache<Long, AbstractChatHandler> chatsCache) {
+        this.chatsCache = chatsCache;
+    }
+
     public void setAbstractGlobalHandler(AbstractGlobalHandler abstractGlobalHandler) {
         this.abstractGlobalHandler = abstractGlobalHandler;
 
         abstractGlobalHandler.start();
     }
 
-    public void setChatHandlerGenerator(Function<Long, ? extends AbstractChatHandler> chatHandlerGenerator) {
-        this.chatHandlerGenerator = chatHandlerGenerator;
-    }
-
-    public void setUserHandlerGenerator(Function<Long, ? extends AbstractUserHandler> userHandlerGenerator) {
-        this.userHandlerGenerator = userHandlerGenerator;
-    }
-
-    protected AbstractChatHandler getOrCreateChatHandler(long chatId) {
-        if (chatHandlerGenerator == null)
-            return null;
-
-        if (!chats.containsKey(chatId)) {
-            AbstractChatHandler handler = chatHandlerGenerator.apply(chatId);
-            handler.start();
-
-            chats.put(chatId, handler);
-
-            return handler;
-        }
-
-        return chats.get(chatId);
-    }
-
-    protected AbstractUserHandler getOrCreateUserHandler(long userId) {
-        if (userHandlerGenerator == null)
-            return null;
-
-        if (!users.containsKey(userId)) {
-            AbstractUserHandler handler = userHandlerGenerator.apply(userId);
-
-            users.put(userId, handler);
-
-            return handler;
-        }
-
-        return users.get(userId);
-    }
-
     public void setUpdateValidator(Function<Update, Boolean> updateValidator) {
         this.updateValidator = updateValidator;
     }
 
-    protected void fireEvent(Event<?> event) {
+    protected void fireEvent(Event<?> event) throws ExecutionException {
         if (event == null)
             return;
 
         if (event instanceof ChatEvent<?> chatEvent) {
-            var contextHandler = getOrCreateChatHandler(chatEvent.chatId);
-
-            if (contextHandler == null)
+            if (chatsCache == null)
                 return;
+
+            var contextHandler = chatsCache.get(chatEvent.chatId);
 
             contextHandler.getEventHandler().fire(chatEvent);
         }else if (event instanceof UserEvent<?> userEvent) {
-            var contextHandler = getOrCreateUserHandler(userEvent.userId);
-
-            if (contextHandler == null)
+            if (usersCache == null)
                 return;
+
+            var contextHandler = usersCache.get(userEvent.userId);
 
             contextHandler.getEventHandler().fire(userEvent);
         }else if (event instanceof NewPollEvent){
@@ -123,6 +90,7 @@ public class UpdatesProcessor implements UpdatesListener {
         int lastUpdateId = CONFIRMED_UPDATES_NONE;
 
         for (Update update : updates) {
+            lastUpdateId = update.updateId();
 
             if (updateValidator != null && !updateValidator.apply(update))
                 continue;
@@ -146,8 +114,6 @@ public class UpdatesProcessor implements UpdatesListener {
             }catch (Exception e) {
                 e.printStackTrace();
             }
-
-            lastUpdateId = update.updateId();
         }
 
         return lastUpdateId;
